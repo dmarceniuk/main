@@ -96,6 +96,251 @@
     VOICE_NOT_FOUND: true
   };
 
+  
+  /* ============================================================
+     UASERIALS EXTENSION FOR BANDERA ONLINE
+     ============================================================ */
+  var UASERIALS_PROXY = 'https://api.framextv.tech/api/proxy?url=';
+  var UASERIALS_KEY = '297796CCB81D255125';
+
+  function uaserialsProxy(url) {
+    return UASERIALS_PROXY + encodeURIComponent(url);
+  }
+
+  function uaserialsFetch(url, success, fail) {
+    var req = new Lampa.Reguest();
+    req.timeout(15000);
+    req.silent(uaserialsProxy(url), function(text) {
+      if (typeof text === 'string') success(text);
+      else if (text && typeof text === 'object') success(JSON.stringify(text));
+      else success(text);
+    }, fail, false, { dataType: 'text' });
+  }
+
+  function hexToBuf(hex) {
+    var bytes = new Uint8Array(hex.length / 2);
+    for (var i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+  }
+
+  function b64ToBuf(b64) {
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  function uaserialsDecryptTag(tagStr, callback, fail) {
+    try {
+      var d = JSON.parse(tagStr);
+      var salt = hexToBuf(d.salt);
+      var iv = hexToBuf(d.iv);
+      var ct = b64ToBuf(d.ciphertext);
+
+      if (window.crypto && window.crypto.subtle) {
+        var enc = new TextEncoder();
+        window.crypto.subtle.importKey(
+          'raw',
+          enc.encode(UASERIALS_KEY),
+          { name: 'PBKDF2' },
+          false,
+          ['deriveKey']
+        ).then(function(keyMaterial) {
+          return window.crypto.subtle.deriveKey(
+            {
+              name: 'PBKDF2',
+              salt: salt,
+              iterations: 999,
+              hash: 'SHA-512'
+            },
+            keyMaterial,
+            { name: 'AES-CBC', length: 256 },
+            false,
+            ['decrypt']
+          );
+        }).then(function(aesKey) {
+          return window.crypto.subtle.decrypt(
+            { name: 'AES-CBC', iv: iv },
+            aesKey,
+            ct
+          );
+        }).then(function(decrypted) {
+          var pt = new TextDecoder('utf-8').decode(decrypted);
+          callback(pt);
+        }).catch(function(err) {
+          if (fail) fail(err);
+        });
+      } else {
+        if (fail) fail(new Error('WebCrypto subtle not supported'));
+      }
+    } catch (e) {
+      if (fail) fail(e);
+    }
+  }
+
+  function uaserialsTortugaDecode(encoded) {
+    try {
+      var cleaned = encoded.replace(/[^A-Za-z0-9+/]/g, '');
+      var pad = cleaned.length % 4;
+      if (pad > 1) cleaned += '='.repeat(4 - pad);
+      var decoded = atob(cleaned);
+      var salt = decoded.charCodeAt(0) & 0xFF;
+      var out = [];
+      for (var i = 1; i < decoded.length; i++) {
+        var k = (salt + 7 * (i - 1) + 13) % 256;
+        out.push(String.fromCharCode((decoded.charCodeAt(i) & 0xFF) ^ k));
+      }
+      return decodeURIComponent(escape(out.join('')));
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function uaserials_search(params, success, fail) {
+    var query = params.original_title || params.title || '';
+    if (!query) return fail();
+    var searchUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(query);
+    uaserialsFetch(searchUrl, function(html) {
+      var regex = /<a[^>]+class="[^"]*uas-card[^"]*"[^>]+href="([^"]+)"[\s\S]*?<span[^>]+class="uas-card__title"[^>]*>([^<]+)<\/span>(?:[\s\S]*?<span[^>]+class="uas-card__year"[^>]*>(\d+)<\/span>)?/g;
+      var items = [];
+      var m;
+      while ((m = regex.exec(html)) !== null) {
+        items.push({
+          title: m[2].trim(),
+          orig_title: query,
+          year: m[3] ? m[3].trim() : '',
+          source: 'uaserials',
+          ref: { href: m[1] }
+        });
+      }
+      if (!items.length) {
+        var fallback = html.match(/href="(https:\/\/uaserials\.com\/\d+-[^"]+\.html)"/);
+        if (fallback) items.push({ title: query, orig_title: query, source: 'uaserials', ref: { href: fallback[1] } });
+      }
+      success(items);
+    }, fail);
+  }
+
+  function uaserials_getContent(ref, success, fail) {
+    if (!ref || !ref.href) return fail();
+    uaserialsFetch(ref.href, function(pageHtml) {
+      var tagMatch = pageHtml.match(/data-tag1=(?:'([^']+)'|"([^"]+)")/);
+      if (!tagMatch) return fail();
+      var tagContent = tagMatch[1] || tagMatch[2];
+
+      uaserialsDecryptTag(tagContent, function(decrypted) {
+        try {
+          var tabs = JSON.parse(decrypted);
+          var playerTab = tabs.find(function(t) { return t.tabName === 'Плеєр'; }) || tabs[0];
+          if (!playerTab || !playerTab.url) return fail();
+
+          uaserialsFetch(playerTab.url, function(embedHtml) {
+            var fileMatch = embedHtml.match(/file:\s*"([^"]+)"/);
+            if (!fileMatch) return fail();
+
+            var decoded = uaserialsTortugaDecode(fileMatch[1]);
+            if (!decoded) return fail();
+
+            if (decoded.indexOf('http') === 0) {
+              success({
+                ok: true,
+                type: 'movie',
+                streams: [{
+                  title: 'UASerials (1080p)',
+                  quality: '1080p',
+                  url: decoded,
+                  ref: { url: decoded }
+                }]
+              });
+              return;
+            }
+
+            var playlist = JSON.parse(decoded);
+            var voicesMap = {};
+            for (var i = 0; i < playlist.length; i++) {
+              var s = playlist[i];
+              var sNum = parseInt(s.season || s.number || (i + 1), 10);
+              var eps = s.folder || [];
+              for (var j = 0; j < eps.length; j++) {
+                var ep = eps[j];
+                var epNum = parseInt(ep.number || (j + 1), 10);
+                var epTitle = ep.title || ('Серія ' + epNum);
+                var fileStr = ep.file || '';
+
+                var voiceMatches = [];
+                var vRegex = /\{([^}]+)\}(https?:\/\/[^\s\(\{]+)/g;
+                var vm;
+                while ((vm = vRegex.exec(fileStr)) !== null) {
+                  voiceMatches.push({ voice: vm[1].trim(), url: vm[2].trim() });
+                }
+
+                if (voiceMatches.length > 0) {
+                  for (var k = 0; k < voiceMatches.length; k++) {
+                    var vName = voiceMatches[k].voice;
+                    var streamUrl = voiceMatches[k].url;
+                    if (!voicesMap[vName]) voicesMap[vName] = {};
+                    if (!voicesMap[vName][sNum]) voicesMap[vName][sNum] = [];
+                    voicesMap[vName][sNum].push({
+                      id: ep.id || (sNum + '-' + epNum),
+                      title: epTitle,
+                      episode: epNum,
+                      url: streamUrl,
+                      ref: { url: streamUrl }
+                    });
+                  }
+                } else {
+                  var urlM = fileStr.match(/https?:\/\/[^\s\(\{]+/);
+                  if (urlM) {
+                    var defName = 'За замовчуванням';
+                    if (!voicesMap[defName]) voicesMap[defName] = {};
+                    if (!voicesMap[defName][sNum]) voicesMap[defName][sNum] = [];
+                    voicesMap[defName][sNum].push({
+                      id: ep.id || (sNum + '-' + epNum),
+                      title: epTitle,
+                      episode: epNum,
+                      url: urlM[0],
+                      ref: { url: urlM[0] }
+                    });
+                  }
+                }
+              }
+            }
+
+            var voices = [];
+            for (var vKey in voicesMap) {
+              var seasons = [];
+              for (var sKey in voicesMap[vKey]) {
+                seasons.push({
+                  season: parseInt(sKey, 10),
+                  title: 'Сезон ' + sKey,
+                  episodes: voicesMap[vKey][sKey]
+                });
+              }
+              seasons.sort(function(a, b) { return a.season - b.season; });
+              voices.push({
+                id: vKey,
+                display_name: vKey,
+                seasons: seasons
+              });
+            }
+
+            success({
+              ok: true,
+              type: 'series',
+              voices: voices
+            });
+          }, fail);
+        } catch (e) {
+          fail(e);
+        }
+      }, fail);
+    }, fail);
+  }
+
   function createV2(sourceKey) {
     return function v2(component, _object) {
       var api_client = component.api_client;
@@ -505,6 +750,26 @@
           }
           request_ref = cloneRef(content_ref);
           request_ref.season = season_number;
+        }
+        if (sourceKey === 'uaserials') {
+          uaserials_getContent(request_ref, function (json) {
+            if (!json || !json.ok) {
+              handleSourceError(json);
+              return;
+            }
+            if (json.type == 'series') {
+              series = normalizeSeries(json);
+              initializeLazyState(ref);
+              filter();
+              buildEpisodes();
+            } else {
+              lazy_state = createLazyState();
+              drawMovie(json);
+            }
+          }, function () {
+            component.doesNotAnswer();
+          });
+          return;
         }
         api_client.getContent(sourceKey, request_ref, function (json) {
           if (!json || !json.ok) {
@@ -1013,6 +1278,9 @@
         return base + url;
       }
       function getStream(ref, success, fail) {
+        if (sourceKey === 'uaserials' && ref && ref.url) {
+          return success([{ url: ref.url, quality: 'auto' }]);
+        }
         var cache_key = Lampa.Utils.hash(JSON.stringify(ref));
         if (stream_cache[cache_key]) {
           return success(stream_cache[cache_key]);
@@ -1316,6 +1584,7 @@
       this.available_sources = Lampa.Storage.get(this.sources_key, []);
       this.titles = {};
       this.applyTitles(this.available_sources);
+      this.titles['uaserials'] = 'UASerials';
     }
     return _createClass(SourcesStore, [{
       key: "normalizeName",
@@ -1555,6 +1824,15 @@
       var cached = Lampa.Storage.get(sourcesStore.sources_key, null);
       api_client.getSources(function (json) {
         if (json && json.ok && Array.isArray(json.sources)) {
+          if (!json.sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
+            json.sources.unshift({
+              name: 'UASerials',
+              key: 'uaserials',
+              enabled: true,
+              capabilities: { search: true, content: true, stream: true },
+              inputs: { search: ['title', 'original_title', 'year'] }
+            });
+          }
           applyAvailableSources(json.sources);
           sourcesStore.saveAvailable(json.sources);
         } else if (cached && Array.isArray(cached)) {
