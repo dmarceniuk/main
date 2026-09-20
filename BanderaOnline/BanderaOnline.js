@@ -98,7 +98,7 @@
 
   
   /* ============================================================
-     UASERIALS EXTENSION FOR BANDERA ONLINE
+     UASERIALS EXTENSION FOR BANDERA ONLINE (v2.1 - Robust CryptoJS)
      ============================================================ */
   var UASERIALS_PROXY = 'https://api.framextv.tech/api/proxy?url=';
   var UASERIALS_KEY = '297796CCB81D255125';
@@ -117,68 +117,38 @@
     }, fail, false, { dataType: 'text' });
   }
 
-  function hexToBuf(hex) {
-    var bytes = new Uint8Array(hex.length / 2);
-    for (var i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-    }
-    return bytes;
-  }
-
-  function b64ToBuf(b64) {
-    var bin = atob(b64);
-    var bytes = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) {
-      bytes[i] = bin.charCodeAt(i);
-    }
-    return bytes;
-  }
-
   function uaserialsDecryptTag(tagStr, callback, fail) {
-    try {
-      var d = JSON.parse(tagStr);
-      var salt = hexToBuf(d.salt);
-      var iv = hexToBuf(d.iv);
-      var ct = b64ToBuf(d.ciphertext);
-
-      if (window.crypto && window.crypto.subtle) {
-        var enc = new TextEncoder();
-        window.crypto.subtle.importKey(
-          'raw',
-          enc.encode(UASERIALS_KEY),
-          { name: 'PBKDF2' },
-          false,
-          ['deriveKey']
-        ).then(function(keyMaterial) {
-          return window.crypto.subtle.deriveKey(
-            {
-              name: 'PBKDF2',
-              salt: salt,
-              iterations: 999,
-              hash: 'SHA-512'
-            },
-            keyMaterial,
-            { name: 'AES-CBC', length: 256 },
-            false,
-            ['decrypt']
-          );
-        }).then(function(aesKey) {
-          return window.crypto.subtle.decrypt(
-            { name: 'AES-CBC', iv: iv },
-            aesKey,
-            ct
-          );
-        }).then(function(decrypted) {
-          var pt = new TextDecoder('utf-8').decode(decrypted);
-          callback(pt);
-        }).catch(function(err) {
-          if (fail) fail(err);
+    function doDecrypt() {
+      try {
+        var d = typeof tagStr === 'string' ? JSON.parse(tagStr) : tagStr;
+        if (!window.CryptoJS) {
+          if (fail) fail(new Error('CryptoJS not available'));
+          return;
+        }
+        var cSalt = CryptoJS.enc.Hex.parse(d.salt);
+        var cIv = CryptoJS.enc.Hex.parse(d.iv);
+        var cKey = CryptoJS.PBKDF2(UASERIALS_KEY, cSalt, {
+          keySize: 256 / 32,
+          iterations: 999,
+          hasher: CryptoJS.algo.SHA512
         });
-      } else {
-        if (fail) fail(new Error('WebCrypto subtle not supported'));
+        var cDec = CryptoJS.AES.decrypt(d.ciphertext, cKey, {
+          iv: cIv,
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7
+        });
+        var pt = cDec.toString(CryptoJS.enc.Utf8);
+        if (pt) callback(pt);
+        else if (fail) fail(new Error('Decryption empty'));
+      } catch (e) {
+        if (fail) fail(e);
       }
-    } catch (e) {
-      if (fail) fail(e);
+    }
+
+    if (window.CryptoJS) {
+      doDecrypt();
+    } else {
+      Lampa.Utils.putScriptAsync(['https://dmarceniuk.github.io/main/crypto-js.min.js'], doDecrypt);
     }
   }
 
@@ -200,9 +170,15 @@
     }
   }
 
-  function uaserials_search(params, success, fail) {
-    var query = params.original_title || params.title || '';
-    if (!query) return fail();
+  function uaserials_search(params, object, success, fail) {
+    params = params || {};
+    var movie = (object && object.movie) || {};
+    var query = params.original_title || params.title || movie.original_title || movie.original_name || movie.title || movie.name || '';
+    if (!query) {
+      if (fail) fail();
+      return;
+    }
+
     var searchUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(query);
     uaserialsFetch(searchUrl, function(html) {
       var regex = /<a[^>]+class="[^"]*uas-card[^"]*"[^>]+href="([^"]+)"[\s\S]*?<span[^>]+class="uas-card__title"[^>]*>([^<]+)<\/span>(?:[\s\S]*?<span[^>]+class="uas-card__year"[^>]*>(\d+)<\/span>)?/g;
@@ -221,29 +197,74 @@
         var fallback = html.match(/href="(https:\/\/uaserials\.com\/\d+-[^"]+\.html)"/);
         if (fallback) items.push({ title: query, orig_title: query, source: 'uaserials', ref: { href: fallback[1] } });
       }
+
+      if (!items.length) {
+        var uaTitle = movie.title || movie.name || '';
+        if (uaTitle && uaTitle !== query) {
+          var retryUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(uaTitle);
+          uaserialsFetch(retryUrl, function(html2) {
+            while ((m = regex.exec(html2)) !== null) {
+              items.push({
+                title: m[2].trim(),
+                orig_title: uaTitle,
+                year: m[3] ? m[3].trim() : '',
+                source: 'uaserials',
+                ref: { href: m[1] }
+              });
+            }
+            if (!items.length) {
+              var fallback2 = html2.match(/href="(https:\/\/uaserials\.com\/\d+-[^"]+\.html)"/);
+              if (fallback2) items.push({ title: uaTitle, orig_title: uaTitle, source: 'uaserials', ref: { href: fallback2[1] } });
+            }
+            if (!items.length) {
+              if (fail) fail();
+              return;
+            }
+            success(items);
+          }, fail);
+          return;
+        }
+        if (fail) fail();
+        return;
+      }
       success(items);
     }, fail);
   }
 
   function uaserials_getContent(ref, success, fail) {
-    if (!ref || !ref.href) return fail();
+    if (!ref || !ref.href) {
+      if (fail) fail();
+      return;
+    }
     uaserialsFetch(ref.href, function(pageHtml) {
       var tagMatch = pageHtml.match(/data-tag1=(?:'([^']+)'|"([^"]+)")/);
-      if (!tagMatch) return fail();
+      if (!tagMatch) {
+        if (fail) fail();
+        return;
+      }
       var tagContent = tagMatch[1] || tagMatch[2];
 
       uaserialsDecryptTag(tagContent, function(decrypted) {
         try {
           var tabs = JSON.parse(decrypted);
           var playerTab = tabs.find(function(t) { return t.tabName === 'Плеєр'; }) || tabs[0];
-          if (!playerTab || !playerTab.url) return fail();
+          if (!playerTab || !playerTab.url) {
+            if (fail) fail();
+            return;
+          }
 
           uaserialsFetch(playerTab.url, function(embedHtml) {
             var fileMatch = embedHtml.match(/file:\s*"([^"]+)"/);
-            if (!fileMatch) return fail();
+            if (!fileMatch) {
+              if (fail) fail();
+              return;
+            }
 
             var decoded = uaserialsTortugaDecode(fileMatch[1]);
-            if (!decoded) return fail();
+            if (!decoded) {
+              if (fail) fail();
+              return;
+            }
 
             if (decoded.indexOf('http') === 0) {
               success({
@@ -328,6 +349,11 @@
               });
             }
 
+            if (!voices.length) {
+              if (fail) fail();
+              return;
+            }
+
             success({
               ok: true,
               type: 'series',
@@ -335,7 +361,7 @@
             });
           }, fail);
         } catch (e) {
-          fail(e);
+          if (fail) fail(e);
         }
       }, fail);
     }, fail);
@@ -1796,6 +1822,7 @@
     function getBaseSources() {
       var from_api = getEnabledSources();
       if (from_api) {
+        if (from_api.indexOf('uaserials') === -1) from_api.unshift('uaserials');
         return from_api;
       }
       var keys = Object.keys(sources);

@@ -21,68 +21,38 @@
         }, fail, false, { dataType: 'text' });
     }
 
-    function hexToBuf(hex) {
-        var bytes = new Uint8Array(hex.length / 2);
-        for (var i = 0; i < hex.length; i += 2) {
-            bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-        }
-        return bytes;
-    }
-
-    function b64ToBuf(b64) {
-        var bin = atob(b64);
-        var bytes = new Uint8Array(bin.length);
-        for (var i = 0; i < bin.length; i++) {
-            bytes[i] = bin.charCodeAt(i);
-        }
-        return bytes;
-    }
-
     function uaserialsDecryptTag(tagStr, callback, fail) {
-        try {
-            var d = JSON.parse(tagStr);
-            var salt = hexToBuf(d.salt);
-            var iv = hexToBuf(d.iv);
-            var ct = b64ToBuf(d.ciphertext);
-
-            if (window.crypto && window.crypto.subtle) {
-                var enc = new TextEncoder();
-                window.crypto.subtle.importKey(
-                    'raw',
-                    enc.encode(UASERIALS_KEY),
-                    { name: 'PBKDF2' },
-                    false,
-                    ['deriveKey']
-                ).then(function (keyMaterial) {
-                    return window.crypto.subtle.deriveKey(
-                        {
-                            name: 'PBKDF2',
-                            salt: salt,
-                            iterations: 999,
-                            hash: 'SHA-512'
-                        },
-                        keyMaterial,
-                        { name: 'AES-CBC', length: 256 },
-                        false,
-                        ['decrypt']
-                    );
-                }).then(function (aesKey) {
-                    return window.crypto.subtle.decrypt(
-                        { name: 'AES-CBC', iv: iv },
-                        aesKey,
-                        ct
-                    );
-                }).then(function (decrypted) {
-                    var pt = new TextDecoder('utf-8').decode(decrypted);
-                    callback(pt);
-                }).catch(function (err) {
-                    if (fail) fail(err);
+        function doDecrypt() {
+            try {
+                var d = typeof tagStr === 'string' ? JSON.parse(tagStr) : tagStr;
+                if (!window.CryptoJS) {
+                    if (fail) fail(new Error('CryptoJS not available'));
+                    return;
+                }
+                var cSalt = CryptoJS.enc.Hex.parse(d.salt);
+                var cIv = CryptoJS.enc.Hex.parse(d.iv);
+                var cKey = CryptoJS.PBKDF2(UASERIALS_KEY, cSalt, {
+                    keySize: 256 / 32,
+                    iterations: 999,
+                    hasher: CryptoJS.algo.SHA512
                 });
-            } else {
-                if (fail) fail(new Error('WebCrypto subtle not supported'));
+                var cDec = CryptoJS.AES.decrypt(d.ciphertext, cKey, {
+                    iv: cIv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                var pt = cDec.toString(CryptoJS.enc.Utf8);
+                if (pt) callback(pt);
+                else if (fail) fail(new Error('Decryption empty'));
+            } catch (e) {
+                if (fail) fail(e);
             }
-        } catch (e) {
-            if (fail) fail(e);
+        }
+
+        if (window.CryptoJS) {
+            doDecrypt();
+        } else {
+            Lampa.Utils.putScriptAsync(['https://dmarceniuk.github.io/main/crypto-js.min.js'], doDecrypt);
         }
     }
 
@@ -105,7 +75,8 @@
     }
 
     function searchAndLoad(movie, onComplete, onError) {
-        var query = movie.original_title || movie.title || movie.name || '';
+        movie = movie || {};
+        var query = movie.original_title || movie.original_name || movie.title || movie.name || '';
         if (!query) return onError('Немає назви для пошуку');
 
         Lampa.Noty.show('Пошук на UASerials: ' + query);
@@ -123,34 +94,55 @@
                 if (fallback) items.push({ title: query, href: fallback[1] });
             }
 
-            if (!items.length) return onError('Нічого не знайдено на UASerials');
+            if (!items.length) {
+                var uaTitle = movie.title || movie.name || '';
+                if (uaTitle && uaTitle !== query) {
+                    var retryUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(uaTitle);
+                    uaserialsFetch(retryUrl, function (html2) {
+                        while ((m = regex.exec(html2)) !== null) {
+                            items.push({ title: m[2].trim(), href: m[1] });
+                        }
+                        if (!items.length) {
+                            var fallback2 = html2.match(/href="(https:\/\/uaserials\.com\/\d+-[^"]+\.html)"/);
+                            if (fallback2) items.push({ title: uaTitle, href: fallback2[1] });
+                        }
+                        if (!items.length) return onError('Нічого не знайдено на UASerials');
+                        loadTarget(items[0]);
+                    }, onError);
+                    return;
+                }
+                return onError('Нічого не знайдено на UASerials');
+            }
 
-            var target = items[0];
-            uaserialsFetch(target.href, function (pageHtml) {
-                var tagMatch = pageHtml.match(/data-tag1=(?:'([^']+)'|"([^"]+)")/);
-                if (!tagMatch) return onError('Плеєр не знайдено на сторінці');
-                var tagContent = tagMatch[1] || tagMatch[2];
+            loadTarget(items[0]);
 
-                uaserialsDecryptTag(tagContent, function (decrypted) {
-                    try {
-                        var tabs = JSON.parse(decrypted);
-                        var playerTab = tabs.find(function (t) { return t.tabName === 'Плеєр'; }) || tabs[0];
-                        if (!playerTab || !playerTab.url) return onError('Вкладка плеєра відсутня');
+            function loadTarget(target) {
+                uaserialsFetch(target.href, function (pageHtml) {
+                    var tagMatch = pageHtml.match(/data-tag1=(?:'([^']+)'|"([^"]+)")/);
+                    if (!tagMatch) return onError('Плеєр не знайдено на сторінці');
+                    var tagContent = tagMatch[1] || tagMatch[2];
 
-                        uaserialsFetch(playerTab.url, function (embedHtml) {
-                            var fileMatch = embedHtml.match(/file:\s*"([^"]+)"/);
-                            if (!fileMatch) return onError('file не знайдено в ембеді');
+                    uaserialsDecryptTag(tagContent, function (decrypted) {
+                        try {
+                            var tabs = JSON.parse(decrypted);
+                            var playerTab = tabs.find(function (t) { return t.tabName === 'Плеєр'; }) || tabs[0];
+                            if (!playerTab || !playerTab.url) return onError('Вкладка плеєра відсутня');
 
-                            var decoded = uaserialsTortugaDecode(fileMatch[1]);
-                            if (!decoded) return onError('Помилка розкодування Tortuga');
+                            uaserialsFetch(playerTab.url, function (embedHtml) {
+                                var fileMatch = embedHtml.match(/file:\s*"([^"]+)"/);
+                                if (!fileMatch) return onError('file не знайдено в ембеді');
 
-                            onComplete(decoded, target.title);
-                        }, onError);
-                    } catch (err) {
-                        onError(err.message);
-                    }
+                                var decoded = uaserialsTortugaDecode(fileMatch[1]);
+                                if (!decoded) return onError('Помилка розкодування Tortuga');
+
+                                onComplete(decoded, target.title);
+                            }, onError);
+                        } catch (err) {
+                            onError(err.message);
+                        }
+                    }, onError);
                 }, onError);
-            }, onError);
+            }
         }, onError);
     }
 
