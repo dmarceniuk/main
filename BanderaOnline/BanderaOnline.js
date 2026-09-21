@@ -770,8 +770,36 @@
         if (!params.tmdb_id) params.tmdb_id = getTmdbId(movie);
         if (!params.kinopoisk_id) params.kinopoisk_id = movie.kinopoisk_id || '';
         if (!params.mal_id) params.mal_id = movie.mal_id || '';
-        if (typeof params.serial == 'undefined') params.serial = getSerial(movie);
         component.loading(true);
+        if (sourceKey === 'uaserials') {
+          uaserials_search(params, object, function (items) {
+            if (!items || !items.length) {
+              component.empty();
+              return;
+            }
+            if (items.length > 1 && !object.clarification) {
+              component.similars(items.map(function (item) {
+                return {
+                  id: item.ref && (item.ref.id || item.ref.href || item.ref.url || item.ref.play) || item.title,
+                  title: item.title || item.name,
+                  orig_title: item.orig_title || item.original_title,
+                  year: item.year,
+                  serial: typeof item.serial !== 'undefined' ? item.serial : getSerial(movie),
+                  source: 'uaserials',
+                  poster: item.poster || '',
+                  ref: item.ref
+                };
+              }));
+              component.loading(false);
+              return;
+            }
+            selected = items[0];
+            loadContent(selected.ref);
+          }, function () {
+            component.empty();
+          });
+          return;
+        }
         api_client.search(params || {}, sourceKey, function (json) {
           if (!json || !json.ok) {
             handleSourceError(json);
@@ -1675,6 +1703,16 @@
       this.sources_sort_key = 'BO_SOURCES_SORT';
       this.sources_hide_key = 'BO_SOURCES_HIDE';
       this.available_sources = Lampa.Storage.get(this.sources_key, []);
+      if (!Array.isArray(this.available_sources)) this.available_sources = [];
+      if (!this.available_sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
+        this.available_sources.unshift({
+          name: 'UASerials',
+          key: 'uaserials',
+          enabled: true,
+          capabilities: { search: true, content: true, stream: true },
+          inputs: { search: ['title', 'original_title', 'year'] }
+        });
+      }
       this.titles = {};
       this.applyTitles(this.available_sources);
       this.titles['uaserials'] = 'UASerials';
@@ -1741,6 +1779,9 @@
         var hidden = this.getHidden();
         var sorted = this.getSorted();
         var result = list.slice(0);
+        if (result.indexOf('uaserials') === -1) {
+          result.unshift('uaserials');
+        }
         if (sorted.length) {
           var ordered = [];
           sorted.forEach(function (key) {
@@ -1755,6 +1796,9 @@
           result = result.filter(function (name) {
             return hidden.indexOf(name) === -1;
           });
+        }
+        if (result.indexOf('uaserials') === -1 && hidden.indexOf('uaserials') === -1) {
+          result.unshift('uaserials');
         }
         return result;
       }
@@ -1884,6 +1928,9 @@
       }
       sources = filterEnabledSources(sources);
       sources = sourcesStore.applyUserFilters(sources);
+      if (sources.indexOf('uaserials') === -1) {
+        sources.unshift('uaserials');
+      }
       return sources;
     }
     function getBaseSources() {
@@ -1893,29 +1940,42 @@
         return from_api;
       }
       var keys = Object.keys(sources);
-      return keys.length ? keys : [];
+      if (keys.indexOf('uaserials') === -1) keys.unshift('uaserials');
+      return keys.length ? keys : ['uaserials'];
     }
     function filterEnabledSources(list) {
       var enabled = getEnabledSources();
       if (!enabled) return list;
       return list.filter(function (name) {
-        return enabled.indexOf(name) !== -1;
+        return name === 'uaserials' || enabled.indexOf(name) !== -1;
       });
     }
     function getEnabledSources() {
-      if (!available_sources || !available_sources.length) return null;
+      if (!available_sources || !available_sources.length) return ['uaserials'];
       var enabled = available_sources.filter(function (item) {
         return item && item.enabled !== false;
       }).map(function (item) {
         return sourcesStore.normalizeName(item.key || item.name);
       }).filter(Boolean);
+      if (enabled.indexOf('uaserials') === -1) {
+        enabled.unshift('uaserials');
+      }
       enabled.forEach(function (name) {
         return ensureSource(name);
       });
-      return enabled.length ? enabled : null;
+      return enabled.length ? enabled : ['uaserials'];
     }
     function loadAvailableSources(call) {
       var cached = Lampa.Storage.get(sourcesStore.sources_key, null);
+      if (cached && Array.isArray(cached) && !cached.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
+        cached.unshift({
+          name: 'UASerials',
+          key: 'uaserials',
+          enabled: true,
+          capabilities: { search: true, content: true, stream: true },
+          inputs: { search: ['title', 'original_title', 'year'] }
+        });
+      }
       api_client.getSources(function (json) {
         if (json && json.ok && Array.isArray(json.sources)) {
           if (!json.sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
