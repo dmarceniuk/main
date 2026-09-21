@@ -170,65 +170,129 @@
     }
   }
 
+  function cleanStr(s) {
+    if (!s) return '';
+    return s.toLowerCase()
+      .replace(/<[^>]+>/g, '')
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function parseUASerialsCards(html) {
+    var items = [];
+    var cardRegex = /<a[^>]+class="[^"]*uas-card[^"]*"[^>]+href="([^"]+)"[\s\S]*?<span[^>]+class="uas-card__title"[^>]*>([^<]+)<\/span>(?:[\s\S]*?<span[^>]+class="uas-card__orig"[^>]*>([\s\S]*?)<\/span>)?(?:[\s\S]*?<span[^>]+class="uas-card__year"[^>]*>(\d+)<\/span>)?/g;
+    var m;
+    while ((m = cardRegex.exec(html)) !== null) {
+      items.push({
+        href: m[1],
+        title: m[2].trim(),
+        orig: m[3] ? m[3].replace(/<[^>]+>/g, '').trim() : '',
+        year: m[4] ? m[4].trim() : ''
+      });
+    }
+    return items;
+  }
+
+  function scoreUASerialsCard(card, movie) {
+    var targetOrig = cleanStr(movie.original_title || movie.original_name || '');
+    var targetUa = cleanStr(movie.title || movie.name || '');
+    var cardTitle = cleanStr(card.title);
+    var cardOrig = cleanStr(card.orig);
+
+    if ((targetOrig && cardOrig === targetOrig) || (targetUa && cardTitle === targetUa)) {
+      return 100;
+    }
+    if (targetOrig && cardOrig && (cardOrig.indexOf(targetOrig) !== -1 || targetOrig.indexOf(cardOrig) !== -1)) {
+      return 85;
+    }
+    if (targetUa && cardTitle && (cardTitle.indexOf(targetUa) !== -1 || targetUa.indexOf(cardTitle) !== -1)) {
+      return 85;
+    }
+
+    var tWordsOrig = targetOrig.split(' ').filter(function(w) { return w.length > 1; });
+    var tWordsUa = targetUa.split(' ').filter(function(w) { return w.length > 1; });
+    var cWords = (cardTitle + ' ' + cardOrig).split(' ').filter(function(w) { return w.length > 1; });
+
+    var matchOrig = 0;
+    tWordsOrig.forEach(function(w) { if (cWords.indexOf(w) !== -1) matchOrig++; });
+    var ratioOrig = tWordsOrig.length ? matchOrig / tWordsOrig.length : 0;
+
+    var matchUa = 0;
+    tWordsUa.forEach(function(w) { if (cWords.indexOf(w) !== -1) matchUa++; });
+    var ratioUa = tWordsUa.length ? matchUa / tWordsUa.length : 0;
+
+    var maxRatio = Math.max(ratioOrig, ratioUa);
+    if (maxRatio < 0.5) return 0;
+
+    var score = Math.round(maxRatio * 70);
+    var tYear = parseInt((movie.release_date || movie.first_air_date || movie.year || '').slice(0, 4), 10);
+    var cYear = parseInt(card.year, 10);
+    if (tYear && cYear) {
+      var diff = Math.abs(tYear - cYear);
+      if (diff === 0) score += 20;
+      else if (diff === 1) score += 10;
+      else if (diff > 2) score -= 30;
+    }
+    return Math.max(0, score);
+  }
+
   function uaserials_search(params, object, success, fail) {
     params = params || {};
     var movie = (object && object.movie) || {};
-    var query = params.original_title || params.title || movie.original_title || movie.original_name || movie.title || movie.name || '';
-    if (!query) {
+    var origQuery = (params.original_title || movie.original_title || movie.original_name || '').trim();
+    var uaQuery = (params.title || movie.title || movie.name || '').trim();
+    var primaryQuery = origQuery || uaQuery;
+    if (!primaryQuery) {
       if (fail) fail();
       return;
     }
 
-    var searchUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(query);
+    var cleanPrimary = primaryQuery.replace(/[:,\.!\?#\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+    var searchUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(cleanPrimary);
+
     uaserialsFetch(searchUrl, function(html) {
-      var regex = /<a[^>]+class="[^"]*uas-card[^"]*"[^>]+href="([^"]+)"[\s\S]*?<span[^>]+class="uas-card__title"[^>]*>([^<]+)<\/span>(?:[\s\S]*?<span[^>]+class="uas-card__year"[^>]*>(\d+)<\/span>)?/g;
-      var items = [];
-      var m;
-      while ((m = regex.exec(html)) !== null) {
-        items.push({
-          title: m[2].trim(),
-          orig_title: query,
-          year: m[3] ? m[3].trim() : '',
-          source: 'uaserials',
-          ref: { href: m[1] }
-        });
-      }
-      if (!items.length) {
-        var fallback = html.match(/href="(https:\/\/uaserials\.com\/\d+-[^"]+\.html)"/);
-        if (fallback) items.push({ title: query, orig_title: query, source: 'uaserials', ref: { href: fallback[1] } });
+      var items = parseAndFilter(html);
+      if (items.length) {
+        return success(items);
       }
 
-      if (!items.length) {
-        var uaTitle = movie.title || movie.name || '';
-        if (uaTitle && uaTitle !== query) {
-          var retryUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(uaTitle);
-          uaserialsFetch(retryUrl, function(html2) {
-            while ((m = regex.exec(html2)) !== null) {
-              items.push({
-                title: m[2].trim(),
-                orig_title: uaTitle,
-                year: m[3] ? m[3].trim() : '',
-                source: 'uaserials',
-                ref: { href: m[1] }
-              });
-            }
-            if (!items.length) {
-              var fallback2 = html2.match(/href="(https:\/\/uaserials\.com\/\d+-[^"]+\.html)"/);
-              if (fallback2) items.push({ title: uaTitle, orig_title: uaTitle, source: 'uaserials', ref: { href: fallback2[1] } });
-            }
-            if (!items.length) {
-              if (fail) fail();
-              return;
-            }
-            success(items);
-          }, fail);
-          return;
-        }
-        if (fail) fail();
+      var secondaryQuery = (primaryQuery === origQuery ? uaQuery : origQuery);
+      if (secondaryQuery && secondaryQuery !== primaryQuery) {
+        var cleanSecondary = secondaryQuery.replace(/[:,\.!\?#\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+        var retryUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(cleanSecondary);
+        uaserialsFetch(retryUrl, function(html2) {
+          var items2 = parseAndFilter(html2);
+          if (items2.length) {
+            return success(items2);
+          }
+          if (fail) fail();
+        }, fail);
         return;
       }
-      success(items);
+
+      if (fail) fail();
     }, fail);
+
+    function parseAndFilter(htmlContent) {
+      var rawCards = parseUASerialsCards(htmlContent);
+      var scored = [];
+      for (var i = 0; i < rawCards.length; i++) {
+        var s = scoreUASerialsCard(rawCards[i], movie);
+        if (s >= 40) {
+          scored.push({
+            title: rawCards[i].title,
+            orig_title: rawCards[i].orig || primaryQuery,
+            year: rawCards[i].year || '',
+            source: 'uaserials',
+            score: s,
+            ref: { href: rawCards[i].href }
+          });
+        }
+      }
+      scored.sort(function(a, b) { return b.score - a.score; });
+      return scored;
+    }
   }
 
   function uaserials_getContent(ref, success, fail) {
@@ -1284,7 +1348,7 @@
         if (sourceKey === 'uaflix' && isZetvideoUrl(url)) return false;
         var player = Lampa.Storage.get('player');
         if (player && player !== 'inner') return false;
-        return isAshdiUrl(url) || isZetvideoUrl(url) || isSniplyoUrl(url) || isCreavioUrl(url);
+        return isAshdiUrl(url) || isZetvideoUrl(url) || isSniplyoUrl(url) || isCreavioUrl(url) || isTortugaUrl(url);
       }
       function isAshdiUrl(url) {
         return /(^|\/\/)([^\/]*\.)?ashdi\.vip(\/|$)/i.test(url || '');
@@ -1298,10 +1362,13 @@
       function isCreavioUrl(url) {
         return /(^|\/\/)([^\/]*\.)?creavio\.online(\/|$)/i.test(url || '');
       }
+      function isTortugaUrl(url) {
+        return /(^|\/\/)([^\/]*\.)?tortuga\.tw(\/|$)/i.test(url || '');
+      }
       function wrapStreamProxy(url) {
         var base = 'https://api.framextv.tech/api/proxy?url=';
         if (url.indexOf(base) === 0) return url;
-        return base + url;
+        return base + encodeURIComponent(url);
       }
       function getStream(ref, success, fail) {
         if (sourceKey === 'uaserials' && ref && ref.url) {
