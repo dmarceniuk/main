@@ -123,18 +123,13 @@
   }
 
   function uaserialsFetch(url, success, fail) {
-    var nativeMode = isNativePlatform();
-    if (nativeMode) {
-      var directReq = new Lampa.Reguest();
-      directReq.timeout(15000);
-      directReq.silent(url, function(text) {
-        handleResponse(text, success, fail, false);
-      }, function() {
-        fetchViaProxy(url, success, fail);
-      }, false, { dataType: 'text' });
-    } else {
+    var directReq = new Lampa.Reguest();
+    directReq.timeout(10000);
+    directReq.silent(url, function(text) {
+      handleResponse(text, success, fail, false);
+    }, function() {
       fetchViaProxy(url, success, fail);
-    }
+    }, false, { dataType: 'text' });
 
     function fetchViaProxy(targetUrl, s, f) {
       var req = new Lampa.Reguest();
@@ -245,14 +240,23 @@
       var origM = cardHtml.match(/class="uas-card__orig"[^>]*>([\s\S]*?)<\/span>/i);
       var yearM = cardHtml.match(/class="uas-card__year"[^>]*>(\d+)<\/span>/i);
       var ratingM = cardHtml.match(/class="uas-card__rating"[^>]*>([\d\.]+)<\/span>/i);
+      var posterM = cardHtml.match(/(?:data-src|src)="([^"]+)"/i);
 
       if (hrefM && titleM) {
+        var posterUrl = '';
+        if (posterM && posterM[1] && posterM[1].indexOf('default.png') === -1) {
+          posterUrl = posterM[1].trim();
+          if (posterUrl.indexOf('http') !== 0) {
+            posterUrl = UASERIALS_BASE + (posterUrl.charAt(0) === '/' ? '' : '/') + posterUrl;
+          }
+        }
         items.push({
           href: hrefM[1],
           title: titleM[1].replace(/<[^>]+>/g, '').trim(),
           orig: origM ? origM[1].replace(/<[^>]+>/g, '').trim() : '',
           year: yearM ? yearM[1].trim() : '',
-          rating: ratingM ? ratingM[1].trim() : ''
+          rating: ratingM ? ratingM[1].trim() : '',
+          poster: posterUrl
         });
       }
     }
@@ -265,33 +269,33 @@
     var cardTitle = cleanStr(card.title);
     var cardOrig = cleanStr(card.orig);
 
+    var baseScore = 0;
     if ((targetOrig && cardOrig === targetOrig) || (targetUa && cardTitle === targetUa)) {
-      return 100;
+      baseScore = 100;
+    } else if (targetOrig && cardOrig && (cardOrig.indexOf(targetOrig) !== -1 || targetOrig.indexOf(cardOrig) !== -1)) {
+      baseScore = 85;
+    } else if (targetUa && cardTitle && (cardTitle.indexOf(targetUa) !== -1 || targetUa.indexOf(cardTitle) !== -1)) {
+      baseScore = 85;
+    } else {
+      var tWordsOrig = targetOrig.split(' ').filter(function(w) { return w.length > 1; });
+      var tWordsUa = targetUa.split(' ').filter(function(w) { return w.length > 1; });
+      var cWords = (cardTitle + ' ' + cardOrig).split(' ').filter(function(w) { return w.length > 1; });
+
+      var matchOrig = 0;
+      tWordsOrig.forEach(function(w) { if (cWords.indexOf(w) !== -1) matchOrig++; });
+      var ratioOrig = tWordsOrig.length ? matchOrig / tWordsOrig.length : 0;
+
+      var matchUa = 0;
+      tWordsUa.forEach(function(w) { if (cWords.indexOf(w) !== -1) matchUa++; });
+      var ratioUa = tWordsUa.length ? matchUa / tWordsUa.length : 0;
+
+      var maxRatio = Math.max(ratioOrig, ratioUa);
+      if (maxRatio < 0.5) return 0;
+      baseScore = Math.round(maxRatio * 70);
     }
-    if (targetOrig && cardOrig && (cardOrig.indexOf(targetOrig) !== -1 || targetOrig.indexOf(cardOrig) !== -1)) {
-      return 85;
-    }
-    if (targetUa && cardTitle && (cardTitle.indexOf(targetUa) !== -1 || targetUa.indexOf(cardTitle) !== -1)) {
-      return 85;
-    }
 
-    var tWordsOrig = targetOrig.split(' ').filter(function(w) { return w.length > 1; });
-    var tWordsUa = targetUa.split(' ').filter(function(w) { return w.length > 1; });
-    var cWords = (cardTitle + ' ' + cardOrig).split(' ').filter(function(w) { return w.length > 1; });
-
-    var matchOrig = 0;
-    tWordsOrig.forEach(function(w) { if (cWords.indexOf(w) !== -1) matchOrig++; });
-    var ratioOrig = tWordsOrig.length ? matchOrig / tWordsOrig.length : 0;
-
-    var matchUa = 0;
-    tWordsUa.forEach(function(w) { if (cWords.indexOf(w) !== -1) matchUa++; });
-    var ratioUa = tWordsUa.length ? matchUa / tWordsUa.length : 0;
-
-    var maxRatio = Math.max(ratioOrig, ratioUa);
-    if (maxRatio < 0.5) return 0;
-
-    var score = Math.round(maxRatio * 70);
-    var tYear = parseInt((movie.release_date || movie.first_air_date || movie.year || '').slice(0, 4), 10);
+    var score = baseScore;
+    var tYear = parseInt(String(movie.release_date || movie.first_air_date || movie.year || '').slice(0, 4), 10);
     var cYear = parseInt(card.year, 10);
     if (tYear && cYear) {
       var diff = Math.abs(tYear - cYear);
@@ -360,7 +364,8 @@
             year: rawCards[i].year || '',
             source: 'uaserials',
             score: s,
-            ref: { href: rawCards[i].href }
+            ref: { href: rawCards[i].href },
+            poster: rawCards[i].poster || ''
           });
         }
       }
@@ -423,13 +428,13 @@
                       var fileStr = ep.file || '';
 
                       var voiceMatches = [];
-                      var vRegex = /(?:\{([^}]+)\})?(https?:\/\/[^\s\(\{\"]+)(?:\(subtitle:\[([^\]]+)\](https?:\/\/[^\)\s]+)\))?/g;
+                      var vRegex = /(?:\{([^}]+)\})?(https?:\/\/[^\s\(\{\";,]+)(?:\(subtitle:\[([^\]]+)\](https?:\/\/[^\)\s]+)\))?/g;
                       var vm;
                       while ((vm = vRegex.exec(fileStr)) !== null) {
                         var vName = vm[1] ? vm[1].trim() : 'UASerials';
-                        var streamUrl = vm[2].trim();
+                        var streamUrl = vm[2].replace(/[;,]+$/, '').trim();
                         var subLabel = vm[3] ? vm[3].trim() : '';
-                        var subUrl = vm[4] ? vm[4].trim() : '';
+                        var subUrl = vm[4] ? vm[4].replace(/[;,]+$/, '').trim() : '';
                         voiceMatches.push({ voice: vName, url: streamUrl, subLabel: subLabel, subUrl: subUrl });
                       }
 
@@ -438,16 +443,15 @@
                           var vmItem = voiceMatches[k];
                           if (!voicesMap[vmItem.voice]) voicesMap[vmItem.voice] = {};
                           if (!voicesMap[vmItem.voice][sNum]) voicesMap[vmItem.voice][sNum] = [];
+                          var subList = vmItem.subUrl ? [{ label: vmItem.subLabel || 'Українські', url: vmItem.subUrl }] : [];
                           var epObj = {
                             id: ep.id || (sNum + '-' + epNum),
                             title: epTitle,
                             episode: epNum,
                             url: vmItem.url,
-                            ref: { url: vmItem.url }
+                            subtitles: subList,
+                            ref: { url: vmItem.url, subtitles: subList }
                           };
-                          if (vmItem.subUrl) {
-                            epObj.subtitles = [{ label: vmItem.subLabel || 'Українські', url: vmItem.subUrl }];
-                          }
                           if (ep.poster) epObj.thumbnail = ep.poster;
                           voicesMap[vmItem.voice][sNum].push(epObj);
                         }
@@ -486,22 +490,21 @@
 
             // Case B: Movie (Direct stream, voice-tagged streams, or subtitles)
             var movieStreams = [];
-            var mvRegex = /(?:\{([^}]+)\})?(https?:\/\/[^\s\(\{\"]+)(?:\(subtitle:\[([^\]]+)\](https?:\/\/[^\)\s]+)\))?/g;
+            var mvRegex = /(?:\{([^}]+)\})?(https?:\/\/[^\s\(\{\";,]+)(?:\(subtitle:\[([^\]]+)\](https?:\/\/[^\)\s]+)\))?/g;
             var mvm;
             while ((mvm = mvRegex.exec(decoded)) !== null) {
               var mVoice = mvm[1] ? mvm[1].trim() : 'UASerials';
-              var mUrl = mvm[2].trim();
+              var mUrl = mvm[2].replace(/[;,]+$/, '').trim();
               var mSubLabel = mvm[3] ? mvm[3].trim() : '';
-              var mSubUrl = mvm[4] ? mvm[4].trim() : '';
+              var mSubUrl = mvm[4] ? mvm[4].replace(/[;,]+$/, '').trim() : '';
+              var subList = mSubUrl ? [{ label: mSubLabel || 'Українські', url: mSubUrl }] : [];
               var streamObj = {
                 title: mVoice + ' (1080p)',
                 quality: '1080p',
                 url: mUrl,
-                ref: { url: mUrl }
+                subtitles: subList,
+                ref: { url: mUrl, subtitles: subList }
               };
-              if (mSubUrl) {
-                streamObj.subtitles = [{ label: mSubLabel || 'Українські', url: mSubUrl }];
-              }
               movieStreams.push(streamObj);
             }
 
@@ -1466,9 +1469,11 @@
         if (isNativePlatform()) return false;
         // uaflix віддає стріми плеєра zetvideo — вони працюють напряму, обгортка не потрібна
         if (sourceKey === 'uaflix' && isZetvideoUrl(url)) return false;
+        // uaserials / tortuga cdn стріми віддають CORS header (access-control-allow-origin: *) напряму
+        if (isTortugaUrl(url)) return false;
         var player = Lampa.Storage.get('player');
         if (player && player !== 'inner') return false;
-        return isAshdiUrl(url) || isZetvideoUrl(url) || isSniplyoUrl(url) || isCreavioUrl(url) || isTortugaUrl(url);
+        return isAshdiUrl(url) || isZetvideoUrl(url) || isSniplyoUrl(url) || isCreavioUrl(url);
       }
       function isAshdiUrl(url) {
         return /(^|\/\/)([^\/]*\.)?ashdi\.vip(\/|$)/i.test(url || '');
@@ -1492,7 +1497,11 @@
       }
       function getStream(ref, success, fail) {
         if (sourceKey === 'uaserials' && ref && ref.url) {
-          return success([{ url: ref.url, quality: 'auto' }]);
+          return success([{
+            url: ref.url,
+            quality: 'auto',
+            subtitles: ref.subtitles || []
+          }]);
         }
         var cache_key = Lampa.Utils.hash(JSON.stringify(ref));
         if (stream_cache[cache_key]) {
@@ -2317,7 +2326,7 @@
         elem.time = elem.time || '';
         elem.info = info.join('<span class="online-prestige-split">●</span>');
         var item = Lampa.Template.get('bandera_online_folder', elem);
-        if (elem.poster && (elem.source == 'uaflix' || balanser == 'uaflix')) {
+        if (elem.poster && (elem.source == 'uaflix' || balanser == 'uaflix' || elem.source == 'uaserials' || balanser == 'uaserials')) {
           var folder = item.find('.online-prestige__folder');
           var poster = $('<div class="online-prestige__img online-prestige__img--loaded"><img alt="" src="' + escapeHtml(elem.poster) + '"></div>');
           var img = poster.find('img')[0];
