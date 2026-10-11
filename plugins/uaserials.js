@@ -1,15 +1,16 @@
 (function () {
     'use strict';
 
-    var localCrypto = './plugins/crypto-js.min.js';
-    var localBo = './plugins/BanderaOnline/BanderaOnline.js';
-    var remoteCrypto = 'https://dmarceniuk.github.io/main/crypto-js.min.js';
-    var remoteBo = 'https://dmarceniuk.github.io/main/BanderaOnline/BanderaOnline.js';
+    var script = document.currentScript || Array.from(document.scripts || []).pop();
+    var base = (script && script.src) ? script.src.replace(/\/[^/]+$/, '') : 'https://dmarceniuk.github.io/main';
+    if (base.endsWith('/plugins')) {
+        base = base.replace(/\/plugins$/, '');
+    }
+    var remoteCrypto = base + '/crypto-js.min.js';
+    var remoteBo = base + '/BanderaOnline/BanderaOnline.js';
 
     if (!window.CryptoJS || !window.bandera_online) {
-        Lampa.Utils.putScriptAsync([localCrypto, localBo], function () { }, function () {
-            Lampa.Utils.putScriptAsync([remoteCrypto, remoteBo], function () { });
-        });
+        Lampa.Utils.putScriptAsync([remoteCrypto, remoteBo], function () { });
     }
 
     if (window.plugin_uaserials_btn_ready) return;

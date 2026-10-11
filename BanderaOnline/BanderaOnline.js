@@ -875,23 +875,17 @@
             component.empty();
             return;
           }
-          var fallbackSources = (filter_sources || []).filter(function (s) {
-            return s !== sourceKey && s !== 'uatut' && !isSourceDisabled(s);
-          });
-          if (!fallbackSources.length) {
-            component.empty();
-            return;
-          }
-          api_client.search(params || {}, fallbackSources, function (fallbackJson) {
+          isFallback = true;
+          api_client.search(params || {}, null, function (fallbackJson) {
             if (fallbackJson && fallbackJson.ok && Array.isArray(fallbackJson.items) && fallbackJson.items.length) {
               if (window.Lampa && Lampa.Noty) {
                 var hit = fallbackJson.items[0];
-                var hitTitle = sourcesStore.getTitle(hit.source) || hit.source;
+                var hitTitle = hit.source ? hit.source.toUpperCase() : 'інше джерело';
                 Lampa.Noty.show('Знайдено в джерелі ' + hitTitle);
               }
               if (fallbackJson.items.length === 1 && !object.clarification) {
                 selected = fallbackJson.items[0];
-                sourceKey = selected.source || fallbackSources[0];
+                sourceKey = selected.source || 'uaflix';
                 loadContent(selected.ref);
               } else {
                 component.similars(fallbackJson.items.map(function (item) {
@@ -905,7 +899,7 @@
                     kinopoisk_id: item.kinopoisk_id,
                     mal_id: item.mal_id,
                     serial: item.serial,
-                    source: item.source || fallbackSources[0],
+                    source: item.source || 'uaflix',
                     poster: item.source == 'uaflix' ? item.poster : '',
                     ref: item.ref
                   };
