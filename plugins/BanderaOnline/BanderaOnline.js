@@ -397,13 +397,13 @@
           }
 
           uaserialsFetch(playerTab.url, function(embedHtml) {
-            var fileMatch = embedHtml.match(/file:\s*"([^"]+)"/);
+            var fileMatch = embedHtml.match(/file:\s*(?:'([^']+)'|"([^"]+)")/);
             if (!fileMatch) {
               if (fail) fail();
               return;
             }
 
-            var decoded = uaserialsTortugaDecode(fileMatch[1]);
+            var decoded = uaserialsTortugaDecode(fileMatch[1] || fileMatch[2]);
             if (!decoded) {
               if (fail) fail();
               return;
