@@ -448,5 +448,32 @@
     "local_url": "./plugins/MyCinema.js",
     "author": "Hlushok",
     "category": "video"
+  },
+  {
+    "id": "cinema",
+    "name": "Cinema (ByLampa)",
+    "description": "Популярний онлайн-плагін від спільноти ByLampa: балансери та прямі потоки фільмів/серіалів.",
+    "url": "https://bylampa.github.io/cinema.js",
+    "local_url": "./plugins/cinema.js",
+    "author": "ByLampa",
+    "category": "video"
+  },
+  {
+    "id": "showy",
+    "name": "Showy (Онлайн балансер)",
+    "description": "Швидкий агрегатор онлайн-джерел (Filmix, Rezka, Collaps, Kodik, Bamboo, Eneyida та інші).",
+    "url": "http://showy.online/m.js",
+    "local_url": "./plugins/showy.js",
+    "author": "Showy",
+    "category": "video"
+  },
+  {
+    "id": "online-mod",
+    "name": "Онлайн МОД (NB557)",
+    "description": "Онлайн-перегляд через HDRezka, Filmix, FanSerials, Collaps із вибором озвучки та якості.",
+    "url": "https://nb557.github.io/plugins/online_mod.js",
+    "local_url": "./plugins/online_mod.js",
+    "author": "NB557",
+    "category": "video"
   }
 ]

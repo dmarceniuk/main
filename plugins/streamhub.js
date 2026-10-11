@@ -74,17 +74,27 @@
 
   function fetchStreams(payload) {
     var base = getBackendUrl();
-    var qs = new URLSearchParams();
-    if (payload.imdb) qs.set('imdb', payload.imdb);
-    if (payload.query) qs.set('query', payload.query);
-    if (payload.season) qs.set('season', payload.season);
-    if (payload.episode) qs.set('episode', payload.episode);
-    if (payload.year) qs.set('year', payload.year);
+    var params = [];
+    if (payload.imdb) params.push('imdb=' + encodeURIComponent(payload.imdb));
+    if (payload.query) params.push('query=' + encodeURIComponent(payload.query));
+    if (payload.season) params.push('season=' + encodeURIComponent(payload.season));
+    if (payload.episode) params.push('episode=' + encodeURIComponent(payload.episode));
+    if (payload.year) params.push('year=' + encodeURIComponent(payload.year));
+    var url = base + '/streams' + (params.length ? '?' + params.join('&') : '');
 
-    return fetch(base + '/streams?' + qs.toString(), {
-      signal: AbortSignal.timeout(8000)
+    var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer;
+    if (controller) {
+      timer = setTimeout(function () {
+        try { controller.abort(); } catch (e) {}
+      }, 8000);
+    }
+
+    return fetch(url, {
+      signal: controller ? controller.signal : undefined
     })
       .then(function (r) {
+        if (timer) clearTimeout(timer);
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
@@ -92,6 +102,7 @@
         return d.streams || [];
       })
       .catch(function (err) {
+        if (timer) clearTimeout(timer);
         console.warn('StreamHub fetchStreams error:', err);
         return [];
       });

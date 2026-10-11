@@ -1,12 +1,25 @@
 [
   "tracks.js",
+  "tracks",
   "tstracks.js",
+  "tstracks",
   "torrentmanager.js",
+  "torrentmanager",
   "pubtorr.js",
+  "pubtorr",
   "cts.js",
   "torr.js",
+  "torr",
   "torrent_styles",
+  "torrent",
   "ts_preload",
   "jackett",
-  "torrserver"
+  "torrserver",
+  "rutor",
+  "rutracker",
+  "parser.js",
+  "Parsers.js",
+  "concertTorrSearch",
+  "webtorrent",
+  "p2p"
 ]

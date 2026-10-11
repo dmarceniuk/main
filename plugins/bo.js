@@ -6,10 +6,26 @@
     var remoteUrl = 'https://dmarceniuk.github.io/main/BanderaOnline/BanderaOnline.js';
 
     function loadRemote() {
-        Lampa.Utils.putScriptAsync([remoteCrypto, remoteUrl], function () { });
+        if (!window.CryptoJS) {
+            Lampa.Utils.putScriptAsync([remoteCrypto], function () {
+                Lampa.Utils.putScriptAsync([remoteUrl], function () { });
+            }, function () {
+                Lampa.Utils.putScriptAsync([remoteUrl], function () { });
+            });
+        } else {
+            Lampa.Utils.putScriptAsync([remoteUrl], function () { });
+        }
     }
 
-    Lampa.Utils.putScriptAsync([localCrypto, localPath], function () { }, function () {
-        loadRemote();
-    });
+    function loadLocal() {
+        if (!window.CryptoJS) {
+            Lampa.Utils.putScriptAsync([localCrypto], function () {
+                Lampa.Utils.putScriptAsync([localPath], function () { }, loadRemote);
+            }, loadRemote);
+        } else {
+            Lampa.Utils.putScriptAsync([localPath], function () { }, loadRemote);
+        }
+    }
+
+    loadLocal();
 })();

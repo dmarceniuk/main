@@ -30,21 +30,28 @@
    - Повноцінна інтеграція від проєкту [Treamz/streamhub](https://github.com/Treamz/streamhub).
    - Агрегує стріми з **HDRezka, Eneyida, UAFlix, UASerials та Kodik**.
    - Підтримує сезони та серії через TMDB, вибір аудіодоріжок і якість відео.
-3. **UASerials (Швидка кнопка)** (`uaserials.js`):
+3. **Cinema (ByLampa)** (`plugins/cinema.js`):
+   - Окремий модуль із кінематографічним фокусом від ByLampa.
+   - Балансери, фільтрація за озвучками та якістю потоку.
+4. **Showy** (`plugins/showy.js` + `plugins/showy/online.js`):
+   - Швидкий онлайн-агрегатор для перегляду фільмів та серіалів (Filmix, Rezka, Collaps, Kodik, Bamboo, Eneyida).
+5. **Онлайн МОД (NB557)** (`plugins/online_mod.js`):
+   - Популярний балансер із підтримкою прямих потоків HDRezka, Filmix, FanSerials, Collaps (актуальна версія з фіксами 2026 року).
+6. **UASerials (Швидка кнопка)** (`uaserials.js`):
    - Окрема кнопка прямо на картці фільму/серіалу для швидкого запуску перегляду з порталу UASerials в українському дубляжі.
-4. **Hikka Anime** (`hikka.js` + `hikka/`):
+7. **Hikka Anime** (`hikka.js` + `hikka/`):
    - Каталог і онлайн-перегляд аніме з українським дубляжем від `hikka.io`.
    - Розклад онгоїнгів, описи персонажів, сезони та серії.
-5. **Kinobaza** (`kb.js` + `kinobaza/`):
+8. **Kinobaza** (`kb.js` + `kinobaza/`):
    - Інтеграція з українською базою фільмів Kinobaza: офіційні українські трейлери, релізи, тематичні добірки.
-6. **SaloPower** (`sp.js` + `SaloPower/`):
+9. **SaloPower** (`sp.js` + `SaloPower/`):
    - Онлайн-записи та повтори спортивних подій (футбол, баскетбол, бокс, теніс, кіберспорт).
-7. **MyCinema** (`MyCinema.js`):
-   - Каталоги популярних стрімінгових платформ: Megogo, Sweet.tv, Kyivstar TV, Netflix, Apple TV+, HBO Max, Amazon Prime.
-8. **TryzubTV** (`ttv.js` + `TryzubTV/`):
-   - Прямий перегляд українських телеканалів через HLS стрімінг (IPTV).
-9. **CommunityWatches** (`cw.js` + `CommunityWatches/`):
-   - Щотижневі топи та приховані перлини від української спільноти LME.
+10. **MyCinema** (`MyCinema.js`):
+    - Каталоги популярних стрімінгових платформ: Megogo, Sweet.tv, Kyivstar TV, Netflix, Apple TV+, HBO Max, Amazon Prime.
+11. **TryzubTV** (`ttv.js` + `TryzubTV/`):
+    - Прямий перегляд українських телеканалів через HLS стрімінг (IPTV).
+12. **CommunityWatches** (`cw.js` + `CommunityWatches/`):
+    - Щотижневі топи та приховані перлини від української спільноти LME.
 
 ### 🎨 Інтерфейс та зручність (QoL плагіни):
 - **AVGRating**: Середній рейтинг із 11 сервісів (TMDB, IMDb, Rotten Tomatoes, Metacritic, Trakt, Kinorium, Letterboxd тощо).
@@ -150,6 +157,37 @@ ares-install com.lampaonline.tv_2.0.0_all.ipk
    - Core API Gateway: `http://localhost:8080`
    - Lampa Adapter: `http://localhost:7011`
 4. У Lampa на телевізорі: відкрийте **Налаштування** → **StreamHub** та вкажіть IP вашого сервера (наприклад, `http://192.168.1.50:7011`).
+
+---
+
+## 🔌 Як додавати сторонні онлайн-джерела (BanderaOnline, Lampa Guide тощо)
+
+Якщо ви знайшли нове джерело (наприклад, на [lampaguide.com/plugins](https://lampaguide.com/plugins) чи в Telegram), є три способи його підключення:
+
+### Спосіб 1: Через меню самої Lampa (на будь-якому пристрої / телевізорі)
+1. Відкрийте **Налаштування** (іконка шестірні) → **Розширення** (або Плагіни).
+2. Натисніть **«Додати плагін»** (плюсик).
+3. Введіть URL-адресу плагіна:
+   - Зовнішнє посилання: наприклад, `https://lampame.github.io/main/BanderaOnline/BanderaOnline.js` або `https://bylampa.github.io/cinema.js`
+   - Або локальне з вашого хабу: `./plugins/cinema.js` / `./plugins/showy.js` / `./plugins/online_mod.js`
+4. Натисніть **«Готово»** та перезапустіть застосунок.
+5. *Захист від торентів*: якщо плагін містить у назві або адресі ознаки торент-парсерів (`tracks`, `torr`, `jackett`, `pubtorr`), наш `plugins_black_list.json` автоматично заблокує його встановлення для вашої правової безпеки.
+
+### Спосіб 2: Через автозавантаження (`autoload.json`)
+Щоб плагін з'являвся автоматично для всіх користувачів вашого хабу без ручного введення:
+1. Відкрийте файл `autoload.json` у корені хабу.
+2. Додайте новий блок:
+   ```json
+   {
+     "url": "./plugins/showy.js",
+     "name": "Showy (Онлайн)",
+     "author": "Showy"
+   }
+   ```
+3. Збережіть і запушіть на GitHub — при відкритті сайту Lampa встановить його автоматично.
+
+### Спосіб 3: Через каталог розширень (`plugins/catalog.json`)
+Всі локальні плагіни з цієї збірки вже зареєстровані у [plugins/catalog.json](plugins/catalog.json). Ви можете вмикати та вимикати їх в один клік у каталозі розширень Lampa.
 
 ---
 
