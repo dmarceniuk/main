@@ -113,6 +113,16 @@
     var files = new Lampa.Explorer(object);
     var last;
 
+    var clearFiles = function () {
+      if (typeof files.clearFiles === 'function') {
+        files.clearFiles();
+      } else if (typeof files.clear === 'function') {
+        files.clear();
+      } else if (files.html) {
+        files.html.find('.explorer__files-body').empty();
+      }
+    };
+
     this.create = function () {
       return files.render();
     };
@@ -148,25 +158,25 @@
         year: movie.release_date ? String(movie.release_date).slice(0, 4) : movie.first_air_date ? String(movie.first_air_date).slice(0, 4) : undefined
       };
 
-      files.clear();
+      clearFiles();
       var loader = $('<div class="broadcast__scan"><div></div></div>');
       files.appendFiles(loader);
 
       fetchStreams(payload).then(function (streams) {
-        files.clear();
+        clearFiles();
         if (!streams || !streams.length) {
           drawEmpty();
           return;
         }
         drawStreams(streams, movie, season);
       }).catch(function () {
-        files.clear();
+        clearFiles();
         drawEmpty();
       });
     };
 
     var showSeasons = function (movie) {
-      files.clear();
+      clearFiles();
       var seasons = movie.seasons || [];
       if (!seasons.length && movie.id) {
         var tmdbId = movie.id;
@@ -338,7 +348,7 @@
 
     this.loading = function (status) {
       if (status) {
-        files.clear();
+        clearFiles();
         files.appendFiles($('<div class="broadcast__scan"><div></div></div>'));
       }
     };
