@@ -118,8 +118,12 @@
 
   function uaserialsProxy(url) {
     var custom = (window.Lampa && Lampa.Storage && Lampa.Storage.get('uaserials_proxy', '')) || '';
-    if (custom) return custom + encodeURIComponent(url);
-    return UASERIALS_PROXY + encodeURIComponent(url);
+    var base = custom || UASERIALS_PROXY;
+    var decodedUrl = url;
+    try {
+      decodedUrl = decodeURI(url);
+    } catch (e) {}
+    return base + encodeURIComponent(decodedUrl);
   }
 
   function uaserialsFetch(url, success, fail) {
@@ -854,7 +858,7 @@
       function normalizeEpisodeTitle(episode, number) {
         return episode.title || episode.name || Lampa.Lang.translate('torrent_serial_episode') + ' ' + number;
       }
-      function search(params) {
+      function search(params, isFallback) {
         params = params || {};
         var movie = object && object.movie || object || {};
         if (!params.title) params.title = movie.title || movie.name || '';
@@ -865,10 +869,61 @@
         if (!params.kinopoisk_id) params.kinopoisk_id = movie.kinopoisk_id || '';
         if (!params.mal_id) params.mal_id = movie.mal_id || '';
         component.loading(true);
+
+        function fallbackSearch() {
+          if (isFallback) {
+            component.empty();
+            return;
+          }
+          var fallbackSources = (filter_sources || []).filter(function (s) {
+            return s !== sourceKey && s !== 'uatut' && !isSourceDisabled(s);
+          });
+          if (!fallbackSources.length) {
+            component.empty();
+            return;
+          }
+          api_client.search(params || {}, fallbackSources, function (fallbackJson) {
+            if (fallbackJson && fallbackJson.ok && Array.isArray(fallbackJson.items) && fallbackJson.items.length) {
+              if (window.Lampa && Lampa.Noty) {
+                var hit = fallbackJson.items[0];
+                var hitTitle = sourcesStore.getTitle(hit.source) || hit.source;
+                Lampa.Noty.show('Знайдено в джерелі ' + hitTitle);
+              }
+              if (fallbackJson.items.length === 1 && !object.clarification) {
+                selected = fallbackJson.items[0];
+                sourceKey = selected.source || fallbackSources[0];
+                loadContent(selected.ref);
+              } else {
+                component.similars(fallbackJson.items.map(function (item) {
+                  return {
+                    id: item.ref && (item.ref.id || item.ref.href || item.ref.url || item.ref.play) || item.title,
+                    title: item.title || item.name,
+                    orig_title: item.title_en || item.original_title,
+                    year: item.year,
+                    imdb_id: item.imdb_id,
+                    tmdb_id: item.tmdb_id,
+                    kinopoisk_id: item.kinopoisk_id,
+                    mal_id: item.mal_id,
+                    serial: item.serial,
+                    source: item.source || fallbackSources[0],
+                    poster: item.source == 'uaflix' ? item.poster : '',
+                    ref: item.ref
+                  };
+                }));
+                component.loading(false);
+              }
+            } else {
+              component.empty();
+            }
+          }, function () {
+            component.empty();
+          });
+        }
+
         if (sourceKey === 'uaserials') {
           uaserials_search(params, object, function (items) {
             if (!items || !items.length) {
-              component.empty();
+              fallbackSearch();
               return;
             }
             if (items.length > 1 && !object.clarification) {
@@ -890,22 +945,22 @@
             selected = items[0];
             loadContent(selected.ref);
           }, function () {
-            component.empty();
+            fallbackSearch();
           });
           return;
         }
         api_client.search(params || {}, sourceKey, function (json) {
           if (!json || !json.ok) {
-            handleSourceError(json);
+            fallbackSearch();
             return;
           }
           if (json.meta && json.meta.code == 'NO_RESULTS') {
-            component.empty();
+            fallbackSearch();
             return;
           }
           var items = json.items || [];
           if (!items.length) {
-            component.empty();
+            fallbackSearch();
             return;
           }
           var aggregated_moonanime = sourceKey == 'moonanime' ? items.find(function (item) {
@@ -939,7 +994,7 @@
           selected = items[0];
           loadContent(selected.ref);
         }, function () {
-          component.doesNotAnswer();
+          fallbackSearch();
         });
       }
       function loadContent(ref) {
@@ -2215,6 +2270,9 @@
       } else {
         balanser = Lampa.Storage.get('bandera_online_balanser', 'uaflix');
       }
+      if (!isNativePlatform() && balanser === 'uaserials' && !Lampa.Storage.get('uaserials_proxy', '')) {
+        balanser = 'uaflix';
+      }
       if (!ensureSource(balanser) || filter_sources.indexOf(balanser) === -1 || balanser === 'uatut') {
         balanser = (filter_sources.indexOf('uaflix') !== -1 ? 'uaflix' : filter_sources[0]) || '';
       }
@@ -2888,10 +2946,19 @@
      * Показать пустой результат
      */
     this.empty = function (msg) {
-      var html = Lampa.Template.get('bandera_online_does_not_answer', {});
-      html.find('.online-empty__buttons').remove();
+      var _thisEmpty = this;
+      var html = Lampa.Template.get('bandera_online_does_not_answer', {
+        balanser: sourcesStore.getTitle(balanser)
+      });
       html.find('.online-empty__title').text(Lampa.Lang.translate('empty_title_two'));
-      html.find('.online-empty__time').text(Lampa.Lang.translate('empty_text'));
+      html.find('.online-empty__time').text(msg || Lampa.Lang.translate('empty_text'));
+      html.find('.cancel').remove();
+      html.find('.change').on('hover:enter', function () {
+        filter.render().find('.filter--sort').trigger('hover:enter');
+      });
+      html.find('.search_all').on('hover:enter', function () {
+        _thisEmpty.searchAll();
+      });
       scroll.append(html);
       this.loading(false);
     };
