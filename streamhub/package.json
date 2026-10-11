@@ -1,0 +1,16 @@
+{
+  "name": "streamhub",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "core",
+    "providers/sample-provider",
+    "providers/rezka-provider",
+    "adapters/stremio-adapter",
+    "adapters/lampa-adapter"
+  ],
+  "scripts": {
+    "lint": "echo 'TODO: lint'",
+    "test": "echo 'TODO: tests'"
+  }
+}

@@ -1,0 +1,287 @@
+{
+  "plugins": [
+    {
+      "id": "infuse-save",
+      "title": "Infuse Save",
+      "short_uk": "Швидке збереження торент-потоку в Infuse з меню файлів.",
+      "short_en": "Quickly save torrent streams to Infuse from the file menu.",
+      "short_ru": "Быстрое сохранение торрент-потока в Infuse из меню файлов.",
+      "desc_uk": "Плагін додає дії `Save to Infuse` та `Save all to Infuse` у список торрент-файлів. Працює з довгим натисканням у вікні файлів, приводить посилання до сумісного формату (`play` замість `preload`) і передає їх в Infuse через deeplink. На Apple TV також доступний пункт відкриття advanced menu.",
+      "desc_en": "Adds `Save to Infuse` and `Save all to Infuse` actions to the torrent file list. Works from the long-press menu, normalizes stream links (`play` instead of `preload`), and sends them to Infuse via deeplink. On Apple TV, it also adds an advanced menu shortcut.",
+      "desc_ru": "Добавляет действия `Save to Infuse` и `Save all to Infuse` в список торрент-файлов. Работает из меню долгого нажатия, приводит ссылки к совместимому формату (`play` вместо `preload`) и передает их в Infuse через deeplink. На Apple TV также добавляет кнопку открытия advanced menu.",
+      "file": "infuseSave.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "new-category",
+      "title": "New Category",
+      "short_uk": "Додає нові розділи, мережі стримінгів, закладки та колекції.",
+      "short_en": "Adds extra catalog sections, network feeds, bookmarks, and collections.",
+      "short_ru": "Добавляет новые разделы каталога, сети стримингов, закладки и коллекции.",
+      "desc_uk": "Розширює каталог Lampa новими категоріями (кіно, TV Top/New, концерти, документальні тощо), добірками за стримінговими мережами та країнами, а також системою закладок. Має окремі налаштування і локалізацію, підтримує додавання розділів у меню та роботу з колекціями LME.",
+      "desc_en": "Extends the Lampa catalog with additional sections (movies, TV Top/New, concerts, documentaries, etc.), streaming-network feeds by country, and a bookmark system. Includes dedicated settings/localization, allows pinning sections to menu, and integrates LME collections.",
+      "desc_ru": "Расширяет каталог Lampa новыми разделами (кино, TV Top/New, концерты, документалки и др.), подборками по стриминговым сетям и странам, а также системой закладок. Имеет отдельные настройки и локализацию, позволяет добавлять разделы в меню и работать с коллекциями LME.",
+      "full_uk": "Розширює каталог Lampa новими розділами, стримінговими сервісами, закладками та колекціями.\n\nПерші кроки користувача в розділі стримінгових сервісів:\n1) Активація розділу в налаштуваннях:\n- Перейдіть у меню налаштувань плагіна.\n- Знайдіть пункт \"Стримінгові сервіси\" та увімкніть його.\n2) Перехід у каталог усіх стримінгових сервісів:\n- У головному меню плагіна з'явиться новий пункт \"TV Show стримінги\".\n- Відкрийте цей пункт, щоб перейти в каталог усіх доступних стримінгових сервісів.\n\nПошук потрібного сервісу:\n- У верхній частині екрана є поле пошуку.\n- Введіть назву потрібного стримінгового сервісу.\n- Плагін покаже результати, що відповідають вашому запиту.\n\nВзаємодія з меню сервісу:\n- Наведіть курсор на сервіс, щоб відкрити контекстне меню.\n- Доступні дії:\n  - \"Відкрити New\" - перехід до нових серіалів на цьому сервісі.\n  - \"Відкрити Top\" - перехід до топових серіалів на цьому сервісі.\n  - \"Додати в Меню\" - сервіс додається в головне меню для швидкого доступу.\n  - \"Додати в Закладки\" - сервіс додається в розділ \"Закладки\".\n\nВидалення з персонального меню:\n- Перейдіть у розділ \"Обране\" всередині розділу стримінгів.\n- Виберіть сервіс зі списку доданих і видаліть його з меню.\n\nВидалення із закладок:\n- Відкрийте розділ \"Закладки\".\n- У контекстному меню сервісу виберіть \"Видалити закладку\".",
+      "full_en": "Extends the Lampa catalog with new sections, streaming services, bookmarks, and collections.\n\nUser first steps in the streaming services section:\n1) Enable the section in settings:\n- Open the plugin settings menu.\n- Find the \"Streaming services\" option and turn it on.\n2) Open the catalog of all streaming services:\n- A new \"TV Show streamings\" item will appear in the main plugin menu.\n- Open this item to enter the catalog of all available streaming services.\n\nFind a service:\n- Use the search field at the top of the screen.\n- Enter the name of the streaming service you need.\n- The plugin will show matching results.\n\nService context menu actions:\n- Hover over a service to open its context menu.\n- Available actions:\n  - \"Open New\" - opens new TV shows for this service.\n  - \"Open Top\" - opens top TV shows for this service.\n  - \"Add to Menu\" - adds the service to the main menu for quick access.\n  - \"Add to Bookmarks\" - adds the service to the \"Bookmarks\" section.\n\nRemove from personal menu:\n- Go to the \"Favorites\" section inside streamings.\n- Select a previously added service and remove it from the menu.\n\nRemove from bookmarks:\n- Open the \"Bookmarks\" section.\n- In the service context menu, choose \"Remove bookmark\".",
+      "full_ru": "Расширяет каталог Lampa новыми разделами, стриминговыми сервисами, закладками и коллекциями.\n\nПервые шаги пользователя в разделе стриминговых сервисов:\n1) Активация раздела в настройках:\n- Перейдите в меню настроек плагина.\n- Найдите пункт \"Стриминговые сервисы\" и включите его.\n2) Переход в каталог всех стриминговых сервисов:\n- В главном меню плагина появится новый пункт \"TV Show стриминги\".\n- Откройте этот пункт, чтобы перейти в каталог всех доступных стриминговых сервисов.\n\nПоиск интересующего сервиса:\n- В верхней части экрана есть поле поиска.\n- Введите название нужного стримингового сервиса.\n- Плагин покажет результаты, соответствующие запросу.\n\nВзаимодействие с меню сервиса:\n- Наведите курсор на сервис, чтобы открыть контекстное меню.\n- Доступные действия:\n  - \"Открыть New\" - переход к новым сериалам на этом сервисе.\n  - \"Открыть Top\" - переход к топовым сериалам на этом сервисе.\n  - \"Добавить в Меню\" - сервис добавляется в главное меню для быстрого доступа.\n  - \"Добавить в Закладки\" - сервис добавляется в раздел \"Закладки\".\n\nУдаление из персонального меню:\n- Перейдите в раздел \"Избранное\" внутри раздела стримингов.\n- Выберите сервис из списка добавленных и удалите его из меню.\n\nУдаление из закладок:\n- Откройте раздел \"Закладки\".\n- В контекстном меню сервиса выберите \"Удалить закладку\".",
+      "screens": "assets/media/nc/01.png, assets/media/nc/02.png, assets/media/nc/03.png, assets/media/nc/04.png, assets/media/nc/05.png ",
+      "file": "newcategory.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "concert-search",
+      "title": "Concert Torr Search",
+      "short_uk": "Окремий пошук концертного контенту в торент-джерелах.",
+      "short_en": "Dedicated torrent search flow for concert content.",
+      "short_ru": "Отдельный сценарий поиска концертного контента в торрент-источниках.",
+      "desc_uk": "Спеціалізований плагін для пошуку концертів і музичних релізів у підключених торрент-джерелах. Дає швидкий вхід у тематичний пошук без ручних фільтрів та добре працює разом із торент-стеком LME.",
+      "desc_en": "A focused plugin for finding concerts and music releases in connected torrent sources. Provides a faster thematic search entry without manual filtering and works well with the LME torrent stack.",
+      "desc_ru": "Специализированный плагин для поиска концертов и музыкальных релизов в подключенных торрент-источниках. Ускоряет тематический поиск без ручной фильтрации и хорошо работает вместе с торрент-стеком LME.",
+      "file": "cts.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "movie-enhancer",
+      "title": "Movie Enhancer",
+      "short_uk": "Комплексний апгрейд картки: кнопки, рейтинги, джерела, метадані.",
+      "short_en": "Comprehensive card upgrade: buttons, ratings, source switch, metadata.",
+      "short_ru": "Комплексное улучшение карточки: кнопки, рейтинги, источники, метаданные.",
+      "desc_uk": "Великий модуль покращень інтерфейсу картки: редактор і сортування кнопок, режим тільки іконок, показ усіх дій, додаткові рейтинги (MDBList/Streaming Discovery), перемикач джерел у шапці, англомовні метадані за потреби, відображення якості та тривалості серій. Має власний блок налаштувань у Lampa.",
+      "desc_en": "A large enhancement pack for the full card UI: button editor/reordering, icon-only mode, show-all actions, additional ratings (MDBList/Streaming Discovery), header source switcher, optional English metadata fallback, and quality/episode runtime badges. Includes its own settings section in Lampa.",
+      "desc_ru": "Крупный пакет улучшений карточки: редактор и сортировка кнопок, режим только иконок, показ всех действий, дополнительные рейтинги (MDBList/Streaming Discovery), переключатель источников в шапке, англоязычные метаданные при необходимости, а также бейджи качества и длительности серии. Имеет отдельный раздел настроек в Lampa.",
+      "file": "lme.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "torrent-manager",
+      "title": "Torrent Downloader",
+      "short_uk": "Керування торент-клієнтом у Lampa: статуси, дії, метадані.",
+      "short_en": "Manage torrent clients in Lampa: statuses, actions, metadata.",
+      "short_ru": "Управление торрент-клиентом в Lampa: статусы, действия, метаданные.",
+      "desc_uk": "Інтегрує зовнішні торент-клієнти (qBittorrent, Transmission, Synology, Keenetic) у Lampa. Дає панель активних завантажень, дії `pause/resume/delete`, вибір дії на додавання (відкрити в клієнті або копіювати лінк), сортування, а також інструменти парсингу/оновлення метаданих для торентів.",
+      "desc_en": "Integrates external torrent clients (qBittorrent, Transmission, Synology, Keenetic) into Lampa. Provides an active-download panel, `pause/resume/delete` actions, configurable add behavior (open in client or copy link), sorting, plus metadata parsing/update tools for torrents.",
+      "desc_ru": "Интегрирует внешние торрент-клиенты (qBittorrent, Transmission, Synology, Keenetic) в Lampa. Добавляет панель активных загрузок, действия `pause/resume/delete`, настройку поведения при добавлении (открывать в клиенте или копировать ссылку), сортировку, а также инструменты парсинга/обновления метаданных торрентов.",
+      "full_uk": "Інтегрує зовнішні торент-клієнти (qBittorrent, Transmission, Synology, Keenetic) у Lampa: панель активних завантажень, дії `pause/resume/delete`, вибір поведінки при додаванні, сортування і роботу з метаданими.\n\nНалаштування qBittorrent (Web UI):\n1) Розділ Authentication:\n- Bypass authentication for clients on localhost: True\n- Bypass authentication for clients in whitelisted IP subnets: True\n- IP subnet whitelist: 192.168.0.0/24\n- Enable Cross-Site Request Forgery (CSRF) protection: False\n2) Розділ Add custom HTTP headers:\n- Access-Control-Allow-Origin: *\nВажливо: з авторизацією цей сценарій не працює, тому для цього режиму її потрібно вимкнути.\n\nНалаштування Synology Download Station:\n1) У Центрі пакетів встановіть Download Station і вкажіть шлях завантаження BT.\n2) Панель керування -> Система -> Портал для входа -> Приложения: для Download Station задайте HTTP/HTTPS порти.\n3) Панель керування -> Підключення -> Зовнішній доступ -> DDNS: додайте провайдера Synology; ім'я хоста зробіть таким самим, як QuickConnect ID.\n4) Панель керування -> Підключення -> Зовнішній доступ -> Конфігурація маршрутизатора: створіть правило для Download Station і відкрийте порти з кроку 2.\n5) У налаштуваннях плагіна вкажіть зовнішній домен виду `***.synology.me:порт`, логін і пароль.",
+      "full_en": "Integrates external torrent clients (qBittorrent, Transmission, Synology, Keenetic) into Lampa with an active downloads panel, `pause/resume/delete` actions, configurable add behavior, sorting, and torrent metadata tools.\n\nqBittorrent (Web UI) setup:\n1) Authentication:\n- Bypass authentication for clients on localhost: True\n- Bypass authentication for clients in whitelisted IP subnets: True\n- IP subnet whitelist: 192.168.0.0/24\n- Enable Cross-Site Request Forgery (CSRF) protection: False\n2) Add custom HTTP headers:\n- Access-Control-Allow-Origin: *\nImportant: this mode does not work with authorization enabled, so disable authorization for this scenario.\n\nSynology Download Station setup:\n1) Install Download Station in Package Center and set the BT download path.\n2) Control Panel -> System -> Login Portal -> Applications: configure HTTP/HTTPS ports for Download Station.\n3) Control Panel -> Connectivity -> External Access -> DDNS: add Synology DDNS; set host name equal to QuickConnect ID.\n4) Control Panel -> Connectivity -> External Access -> Router Configuration: create a rule for Download Station and open the ports from step 2.\n5) In plugin settings, enter external domain in format `***.synology.me:port`, plus login and password.",
+      "full_ru": "Интегрирует внешние торрент-клиенты (qBittorrent, Transmission, Synology, Keenetic) в Lampa: панель активных загрузок, действия `pause/resume/delete`, настройка поведения при добавлении, сортировка и инструменты работы с метаданными.\n\nНастройка qBittorrent (Web UI):\n1) Раздел Authentication:\n- Bypass authentication for clients on localhost: True\n- Bypass authentication for clients in whitelisted IP subnets: True\n- IP subnet whitelist: 192.168.0.0/24\n- Enable Cross-Site Request Forgery (CSRF) protection: False\n2) Раздел Add custom HTTP headers:\n- Access-Control-Allow-Origin: *\nС авторизацией работать не будет, поэтому ее нужно выключить.\n\nНастройка Synology Download Station:\n1) Зайдите в Центр пакетов, установите Download Station и в настройках DS укажите путь для BT-загрузок.\n2) Панель управления -> Система -> Портал для входа -> Приложения: для DS укажите HTTP/HTTPS порты.\n3) Панель управления -> Подключение -> Внешний доступ -> DDNS: добавьте поставщика Synology, имя хоста сделайте таким же, как QuickConnect ID.\n4) Панель управления -> Подключение -> Внешний доступ -> Конфигурация маршрутизатора: создайте правило для DS и откройте порты из пункта 2.\n5) В настройках плагина укажите внешний домен вида `***.synology.me:порт`, логин и пароль.",
+      "screens": "assets/media/tdm/main.png, assets/media/tdm/qbt_0.png, assets/media/tdm/qbt_1.png",
+      "file": "torrentmanager.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "trakt-tv",
+      "title": "TraktTV",
+      "short_uk": "Глибока інтеграція з Trakt: авторизація, історія, списки, Up Next.",
+      "short_en": "Deep Trakt integration: auth, history sync, lists, and Up Next.",
+      "short_ru": "Глубокая интеграция с Trakt: авторизация, история, списки и Up Next.",
+      "desc_uk": "Плагін підключає Trakt OAuth, синхронізує перегляди та прогрес, працює зі списками/колекціями і додає сценарії на кшталт Up Next для серіалів. Містить обробку refresh token, fallback-логіку та власні UI-елементи прогресу прямо на картках.",
+      "desc_en": "Connects Trakt OAuth, syncs watch history/progress, works with lists/collections, and adds flows like Up Next for TV shows. Includes refresh-token handling, fallback logic, and custom progress UI directly on cards.",
+      "desc_ru": "Подключает Trakt OAuth, синхронизирует историю просмотров и прогресс, работает со списками/коллекциями и добавляет сценарии вроде Up Next для сериалов. Включает обработку refresh token, fallback-логику и собственные UI-элементы прогресса на карточках.",
+      "screens": "assets/media/trakttv/main.png",
+      "file": "trakttv.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "tracks",
+      "title": "Tracks Probe",
+      "short_uk": "Детальна інформація про аудіо/субтитри та зручний вибір доріжок.",
+      "short_en": "Detailed audio/subtitle metadata and improved track selection.",
+      "short_ru": "Детальная информация об аудио/субтитрах и удобный выбор дорожек.",
+      "desc_uk": "Плагін аналізує медіапотоки через probe API (кодеки, мови, канали, бітрейт, субтитри) і показує метаінфо в списку торрент-файлів. Додатково підсилює перемикання доріжок у плеєрі, включно з webOS-сценаріями, та кешує результати для швидшої роботи.",
+      "desc_en": "Uses a probe API to inspect media streams (codecs, languages, channels, bitrate, subtitles) and renders this metadata in the torrent file list. Also improves track switching in player flows, including webOS-specific handling, with caching for faster repeated access.",
+      "desc_ru": "Анализирует медиапотоки через probe API (кодеки, языки, каналы, битрейт, субтитры) и показывает метаинформацию в списке торрент-файлов. Также улучшает переключение дорожек в плеере, включая webOS-сценарии, и кеширует результаты для ускорения повторных запросов.",
+      "file": "tracks.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "tsTracks",
+      "title": "TS Tracks Probe",
+      "short_uk": "Детальна інформація про аудіо/субтитри та зручний вибір доріжок від TorrServer.",
+      "short_en": "Detailed audio/subtitle metadata and improved track selection from TorrServer.",
+      "short_ru": "Детальная информация об аудио/субтитрах и удобный выбор дорожек от TorrServer.",
+      "desc_uk": "Плагін для TorrServer, який отримує ffprobe-метадані вибраного торрент-файлу (відео/аудіо/субтитри, кодеки, мови, канали, бітрейт) і показує їх прямо у списку файлів. Також покращує перемикання доріжок у плеєрі та працює через API `torrserver/probe`.",
+      "desc_en": "A TorrServer-focused plugin that fetches ffprobe metadata for the selected torrent file (video/audio/subtitles, codecs, languages, channels, bitrate) and displays it directly in the file list. It also improves in-player track switching and works via the `torrserver/probe` API.",
+      "desc_ru": "Плагин для TorrServer, который получает ffprobe-метаданные выбранного торрент-файла (видео/аудио/субтитры, кодеки, языки, каналы, битрейт) и показывает их прямо в списке файлов. Также улучшает переключение дорожек в плеере и работает через API `torrserver/probe`.",
+      "file": "tstracks.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "hikka-anime",
+      "title": "Hikka Anime",
+      "short_uk": "Аніме-каталог Hikka з фільтрами, франшизами, персонажами й карткою.",
+      "short_en": "Hikka anime catalog with filters, franchise links, characters, and full-card data.",
+      "short_ru": "Аниме-каталог Hikka с фильтрами, франшизами, персонажами и полной карточкой.",
+      "desc_uk": "Український аніме-провайдер для Lampa: каталоги й жанри Hikka, фільтри за типом/статусом/сезоном/рейтингом, сторінки деталей, персонажі та пов'язані франшизи. Плагін нормалізує дані під стандартну картку Lampa, включно з епізодами, країнами, студіями та маркером UA-перекладу.",
+      "desc_en": "Ukrainian anime provider for Lampa: Hikka catalogs/genres, filters by media type/status/season/rating, detailed pages, characters, and related franchise blocks. The plugin normalizes data for Lampa full-card rendering, including episodes, countries, studios, and UA-translation markers.",
+      "desc_ru": "Украинский аниме-провайдер для Lampa: каталоги и жанры Hikka, фильтры по типу/статусу/сезону/рейтингу, страницы деталей, персонажи и связанные франшизы. Плагин нормализует данные под стандартную карточку Lampa, включая эпизоды, страны, студии и маркер UA-перевода.",
+      "screens": "assets/media/hikka/01.png, assets/media/hikka/02.png, assets/media/hikka/03.png",
+      "file": "hikka.js",
+      "langs": [
+        "uk",
+        "en"
+      ]
+    },
+    {
+      "id": "jacred-proxy",
+      "title": "Jacred Proxy",
+      "short_uk": "Проксі-префікс Jackett -> Jacred для красивих бейджів і метаданих у видачі.",
+      "short_en": "Jackett -> Jacred proxy prefix for rich badges and metadata in search results.",
+      "short_ru": "Прокси-префикс Jackett -> Jacred для бейджей и метаданных в результатах.",
+      "desc_uk": "Це не окремий плагін, а URL-префікс проксі `jackett_like_jacred`. Він приймає стандартний Jackett-запит, пересилає його у ваш Jackett і повертає відповідь у форматі Jacred. Завдяки цьому Lampa показує якість (720p/1080p/4K), HDR/Dolby Vision, мову та студії озвучення, субтитри і технічні бейджі без візуальних артефактів на кшталт `undefinedxundefined`. Для підключення використовується адреса проксі, після якої додається URL вашого Jackett, наприклад: `https://parserbridge.lampame.v6.rocks/http://192.168.0.10:9117`.",
+      "desc_en": "This is not a standalone plugin, but a `jackett_like_jacred` proxy URL prefix. It accepts regular Jackett requests, forwards them to your Jackett instance, and converts responses into Jacred-compatible format. That lets Lampa render rich metadata badges: quality (720p/1080p/4K), HDR/Dolby Vision, dubbing language/studios, subtitles, and technical labels, while avoiding UI artifacts like `undefinedxundefined`. Configure it as a proxy base and append your Jackett URL, for example: `https://parserbridge.lampame.v6.rocks/http://192.168.0.10:9117`.",
+      "desc_ru": "Это не отдельный плагин, а URL-префикс прокси `jackett_like_jacred`. Он принимает стандартный запрос Jackett, отправляет его в ваш Jackett и возвращает ответ в формате Jacred. Благодаря этому Lampa отображает бейджи качества (720p/1080p/4K), HDR/Dolby Vision, язык и студии озвучки, субтитры и технические метки без визуальных артефактов вроде `undefinedxundefined`. Подключается как адрес прокси с добавлением URL вашего Jackett, например: `https://parserbridge.lampame.v6.rocks/http://192.168.0.10:9117`.",
+      "file": "https://parserbridge.lampame.v6.rocks/",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "tryzub-tv",
+      "title": "TryzubTV",
+      "short_uk": "Українське ТБ: канали, категорії та кешований каталог.",
+      "short_en": "Ukrainian TV channels and categorized catalog with caching.",
+      "short_ru": "Украинское ТВ: каналы, категории и кешируемый каталог.",
+      "desc_uk": "Провайдер українського ТБ-контенту з API TryzubTV: завантаження каналів, категорій і готових каталог-ліній. Є кешування відповідей (коротке для каналів і довше для каталогу), щоб пришвидшити роботу і зменшити кількість мережевих запитів.",
+      "desc_en": "Ukrainian TV provider based on TryzubTV API: loads channels, categories, and curated catalog lines. Uses response caching (short TTL for channels and longer TTL for catalog) to improve speed and reduce network calls.",
+      "desc_ru": "Провайдер украинского ТВ-контента на базе API TryzubTV: загружает каналы, категории и готовые линии каталога. Использует кеширование ответов (короткий TTL для каналов и более длинный для каталога) для ускорения работы и уменьшения сетевых запросов.",
+      "file": "ttv.js",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "bandera-online",
+      "title": "Bandera 2.0",
+      "short_uk": "Онлайн-джерело з голосами/сезонами та автопідбором стріму.",
+      "short_en": "Online source with voice/season filters and stream selection.",
+      "short_ru": "Онлайн-источник с фильтрами по голосам/сезонам и выбором стрима.",
+      "desc_uk": "Онлайн-провайдер на API v2: шукає контент за назвою, IMDb або Kinopoisk, підтримує вибір озвучки/сезону для серіалів, отримує стріми для епізодів і фільмів, а також вміє підставляти проксі-URL для внутрішнього плеєра. Має обробку кодів недоступних джерел і помилок від бекенду.",
+      "desc_en": "Online provider on API v2: searches by title, IMDb, or Kinopoisk, supports voice/season filtering for series, resolves streams for episodes and movies, and can wrap URLs through proxy for the internal player. Includes handling for disabled-source codes and backend error responses.",
+      "desc_ru": "Онлайн-провайдер на API v2: ищет контент по названию, IMDb или Kinopoisk, поддерживает выбор озвучки/сезона для сериалов, получает стримы для эпизодов и фильмов, а также умеет подставлять прокси-URL для внутреннего плеера. Есть обработка кодов недоступных источников и ошибок бэкенда.",
+      "file": "bo.js",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "community-watches",
+      "title": "CommunityWatches",
+      "short_uk": "Лайни спільноти: топ тижня та сховані геми для головної, фільмів і серіалів.",
+      "short_en": "Community lines: weekly top and hidden gems for home, movies, and TV.",
+      "short_ru": "Лайны сообщества: топ недели и скрытые жемчужины для главной, фильмов и сериалов.",
+      "desc_uk": "Плагін додає контент-лайни Community Watches на базі community top API: «Топ тижня» та «Сховані геми» для головної сторінки, фільмів і серіалів. Працює як окреме джерело та кешує результати для швидшого відкриття.",
+      "desc_en": "Adds Community Watches content rows powered by the community top API: Weekly Top and Hidden Gems for home, movies, and TV. Works as a dedicated source and caches results for faster loading.",
+      "desc_ru": "Добавляет контент-лайны Community Watches на базе community top API: «Топ недели» и «Скрытые жемчужины» для главной, фильмов и сериалов. Работает как отдельный источник и кеширует результаты для более быстрой загрузки.",
+      "file": "cw.js",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "nightingale-notifications",
+      "title": "NightingaleNotifications",
+      "short_uk": "Підписки на серіали з дзвоником у картці та каналом сповіщень про нові епізоди.",
+      "short_en": "TV-series subscriptions with a card bell and episode notifications channel.",
+      "short_ru": "Подписки на сериалы с колокольчиком в карточке и уведомлениями о новых эпизодах.",
+      "desc_uk": "Плагін додає окремий канал сповіщень Nightingale: підписка на серіали через дзвоник у картці, екран підписок, синхронізація UID між пристроями та автоімпорт із історії Lampa/TraktTV.",
+      "desc_en": "Adds Nightingale notification channel: series subscriptions via a card bell, subscriptions screen, UID sync across devices, and auto-import from Lampa history/TraktTV.",
+      "desc_ru": "Добавляет канал уведомлений Nightingale: подписка на сериалы через колокольчик в карточке, экран подписок, синхронизация UID между устройствами и автоимпорт из истории Lampa/TraktTV.",
+      "file": "nn.js",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "nightingale",
+      "title": "Nightingale",
+      "short_uk": "Відображення наявності перекладу в Онлайн джерелах.",
+      "short_en": "Shows availability of translation in Online sources.",
+      "short_ru": "Отображает наличие перевода в Онлайн источниках.",
+      "desc_uk": "Плагін додає на картки фільмів і серіалів бейдж із прапором України, якщо WH API підтверджує наявність українського перекладу в Онлайн-джерелах. Перевірка виконується у фоні для TMDB/CUB контенту, результати кешуються для швидшого відображення.",
+      "desc_en": "Adds a Ukrainian flag badge to movie and TV cards when WH API confirms Ukrainian translation availability in Online sources. Checks TMDB/CUB content in the background and caches results for faster rendering.",
+      "desc_ru": "Добавляет на карточки фильмов и сериалов бейдж с флагом Украины, если WH API подтверждает наличие украинского перевода в Онлайн-источниках. Проверка выполняется в фоне для TMDB/CUB контента, результаты кешируются для более быстрого отображения.",
+      "file": "n.js",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "imdb-trailers",
+      "title": "IMDb Trailers",
+      "short_uk": "Трендові трейлери IMDb: лінія на головній та повноекранний перегляд.",
+      "short_en": "Trending IMDb trailers: main-page line and full-screen browsing.",
+      "short_ru": "Трендовые трейлеры IMDb: линия на главной и полноэкранный просмотр.",
+      "desc_uk": "Плагін підтягує трендові трейлери з IMDb GraphQL API, показує їх горизонтальною лінією на головному екрані та в повноекранному режимі з пагінацією. Підтримує вибір якості відео, автоматичне формування плейлісту та умовне проксі для внутрішнього плеєра.",
+      "desc_en": "Fetches trending trailers from the IMDb GraphQL API, displays them as a horizontal line on the main screen and in a full-screen view with pagination. Supports video quality selection, automatic playlist creation, and conditional proxy for the internal player.",
+      "desc_ru": "Подтягивает трендовые трейлеры из IMDb GraphQL API, показывает их горизонтальной линией на главном экране и в полноэкранном режиме с пагинацией. Поддерживает выбор качества видео, автоматическое формирование плейлиста и условное прокси для внутреннего плеера.",
+      "file": "timdb.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    },
+    {
+      "id": "kinobaza",
+      "title": "Kinobaza",
+      "short_uk": "Український контент-провайдер КіноБаза: каталог, пошук, картки, рейтинги, трейлери, релізи, колекції.",
+      "desc_uk": "Повноцінний контент-провайдер на основі API kinobaza.com.ua. Замінює стандартне джерело Lampa на КіноБазу: головна сторінка з 8 контент-лайнами (зараз дивляться, незабаром, у тренді, топ, останні додавання, кращі фільми/серіали), категорії (фільми, серіали, аніме, мультфільми) з жанровими рядами, детальні картки з акторами дубляжу, рецензіями та коментарями, розширені рейтинги (Kinobaza, IMDb, Metacritic, Rotten Tomatoes), трейлери з YouTube, цифрові релізи (iTunes, Netflix, Rakuten, Megogo, Sweet TV, Takflix, Google Play, Apple TV+), колекції списків і система закладок.",
+      "full_uk": "Повноцінний контент-провайдер на основі API kinobaza.com.ua, який повністю замінює стандартне джерело даних Lampa.\n\nГоловна сторінка:\n- Зараз дивляться (list_type=1)\n- Незабаром у кіно (list_type=2)\n- У тренді за тиждень (list_type=31)\n- Топ КіноБази (list_type=3)\n- Вдома / останні додавання (list_type=5)\n- Кращі фільми (list_type=20)\n- Кращі серіали (list_type=4)\n\nКатегорії:\n- Фільми: 8 основних лайнів + 15 жанрових рядів\n- Серіали: 5 основних лайнів + 15 жанрових рядів, включно з онгоїнгами\n- Аніме: фільтри за жанрами (genres[]=32) та країнами\n- Мультфільми: окремі лайни з виключенням аніме (exclude_genres[]=32)\n\nДетальна картка:\n- Актори дубляжу (окремим блоком)\n- Рецензії та коментарі\n- Рейтинги: Kinobaza, IMDb, Metacritic, Rotten Tomatoes з кольоровою індикацією\n- Дати релізів: UA, світовий, DVD, Blu-ray, Digital\n- Віковий рейтинг та MPAA\n\nДодаткові модулі:\n- Трейлери: сітка YouTube-трейлерів з курсорною пагінацією та плейлистом\n- Цифрові релізи: iTunes, Netflix, Rakuten, Sweet.tv, Megogo, Prime Video, Takflix, Google Play, Apple TV+\n- Колекції (списки): користувацькі списки з пагінацією\n- Source override: перехоплення відкриття карток коли активна КіноБаза\n- Anime/Cartoon override: обхід хардкоду Lampa для аніме та мультфільмів",
+      "file": "kb.js",
+      "langs": [
+        "uk"
+      ]
+    },
+    {
+      "id": "gramlink",
+      "title": "GramLink",
+      "short_uk": "Синхронізація закладок, таймкодів і плагінів між пристроями через Telegram.",
+      "short_en": "Sync bookmarks, watch progress, and plugins across devices via Telegram.",
+      "short_ru": "Синхронизация закладок, таймкодов и плагинов между устройствами через Telegram.",
+      "desc_uk": "GramLink — це плагін для Lampa, який синхронізує твої закладки, таймкоди перегляду та плагіни між пристроями через твій власний Telegram-акаунт. Жодних сторонніх серверів — всі дані зберігаються у твоєму приватному каналі Telegram.",
+      "desc_en": "GramLink is a Lampa plugin that syncs your bookmarks, watch progress, and plugins across devices through your own Telegram account. No third-party servers — all data is stored in your private Telegram channel.",
+      "desc_ru": "GramLink — это плагин для Lampa, который синхронизирует твои закладки, таймкоды просмотра и плагины между устройствами через твой собственный Telegram-аккаунт. Никаких сторонних серверов — все данные хранятся в твоём приватном канале Telegram.",
+      "full_uk": "Повна інструкція: https://pages.markdown.space/lampame/gluk",
+      "full_en": "Full user guide: https://pages.markdown.space/lampame/gl",
+      "full_ru": "Полная инструкция: https://pages.markdown.space/lampame/glru",
+      "file": "GramLink/GramLink.js",
+      "langs": [
+        "en",
+        "uk",
+        "ru"
+      ]
+    }
+  ]
+}

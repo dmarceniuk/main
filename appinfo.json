@@ -1,0 +1,14 @@
+{
+  "id": "com.lampaonline.tv",
+  "version": "2.0.0",
+  "vendor": "LampaOnlineHub",
+  "type": "web",
+  "main": "index.html",
+  "title": "Lampa Online Hub",
+  "icon": "icons/favicon-32x32.png",
+  "largeIcon": "icons/apple-touch-icon.png",
+  "resolution": "1920x1080",
+  "requiredPermissions": [
+    "network"
+  ]
+}

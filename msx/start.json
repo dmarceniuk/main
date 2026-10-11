@@ -1,0 +1,6 @@
+{
+	"name": "LampaUa",
+	"version": "latest",
+	"parameter": "content:{PREFIX}{domain}/msx/start.json",
+	"action": "link:{PREFIX}{domain}"
+}

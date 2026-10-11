@@ -1,0 +1,452 @@
+[
+  {
+    "id": "streamhub",
+    "name": "StreamHub (Онлайн-агрегатор)",
+    "description": "Прямий онлайн перегляд без торентів через Rezka, Eneyida, UAFlix, UASerials та Kodik. Безпечно для перегляду в ЄС.",
+    "url": "./plugins/streamhub.js",
+    "local_url": "./plugins/streamhub.js",
+    "author": "Treamz",
+    "category": "video"
+  },
+  {
+    "id": "anti-dmca",
+    "name": "Anti DMCA",
+    "description": "Обхід обмежень DMCA: прибирає або замінює заблоковані джерела у видачі.",
+    "url": "https://levende.github.io/lampa-plugins/anti-dmca.js",
+    "local_url": "./plugins/anti-dmca.js",
+    "author": "@levende",
+    "category": "video"
+  },
+  {
+    "id": "avgrating",
+    "name": "AVGRating",
+    "description": "Відображення з 11 сайтів які працюють з рейтингами + нагороди + середня оцінка від всіх оцінок.\nПерелік: TMDB, IMDb, Rotten Tomatoes, Metacritic, Trakt TV, Lampa (CUB), RT Audience (Popcorn), MDBList Score, Letterboxd, Нагороди (Awards), Simkl.",
+    "url": "https://cevamnelampaplagin.github.io/tytnemanichogodobrogo/avgrating.js",
+    "local_url": "./plugins/avgrating.js",
+    "author": "cevamnelampaplagin",
+    "category": "theme"
+  },
+  {
+    "id": "balancer-sanitizer",
+    "name": "Balancer Sanitizer",
+    "description": "Очищує та нормалізує URL-и балансерів джерел, прибираючи зайві параметри.",
+    "url": "https://levende.github.io/lampa-plugins/balancer-sanitizer.js",
+    "local_url": "./plugins/balancer-sanitizer.js",
+    "author": "@levende",
+    "category": "other"
+  },
+  {
+    "id": "bandera-2.0",
+    "name": "Bandera 2.0",
+    "description": "Плагін для перегляду онлайн джерел",
+    "url": "https://lampame.github.io/main/bo.js",
+    "local_url": "./plugins/bo.js",
+    "author": "@lampame",
+    "category": "video"
+  },
+  {
+    "id": "bookmarks-sync",
+    "name": "Bookmarks Sync",
+    "description": "Синхронізує закладки та історію з сервісом CUB. Замінює локальні закладки даними з CUB.",
+    "url": "https://levende.github.io/lampa-plugins/bookmarks-sync.js",
+    "local_url": "./plugins/bookmarks-sync.js",
+    "author": "@levende",
+    "category": "other"
+  },
+  {
+    "id": "buttons",
+    "name": "Buttons+",
+    "description": "Кастомізація кнопок у картці. Візуальний редактор дозволяє змінювати порядок, ховати зайві, обирати вигляд (іконки чи текст) і групувати їх у власні папки. Доступно понад 60 іконок, ручний підбір кольорів (палітра/HEX) та розумне фарбування контурних і багатоколірних значків.",
+    "url": "https://ko31k.github.io/LMP/plugins/buttons+.js",
+    "local_url": "./plugins/buttons+.js",
+    "author": "@K031k",
+    "category": "other"
+  },
+  {
+    "id": "cardify",
+    "name": "Cardify+",
+    "description": "Модифікація плагіну для інтерфейсу повної картки (від @ipavlin98 та @Yaroslav_Films). Замінює статичний фон у картці фільму чи серіалу на динамічний. Вміє автоматично відтворювати трейлер на фоні (без звуку) або показувати плавне слайдшоу з постерів, якщо відео вимкнено.",
+    "url": "https://ko31k.github.io/LMP/plugins/cardify+.js",
+    "local_url": "./plugins/cardify+.js",
+    "author": "@K031k",
+    "category": "theme"
+  },
+  {
+    "id": "community-watches",
+    "name": "CommunityWatches",
+    "description": "Контент-лайни Community Watches: «Топ тижня» та «Сховані геми» для головної, фільмів і серіалів. Кешує результати.",
+    "url": "https://lampame.github.io/main/cw.js",
+    "local_url": "./plugins/cw.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "collections"
+  },
+  {
+    "id": "custom-favs",
+    "name": "Custom Favorites",
+    "description": "Розширює закладки Lampa користувацькими типами для зручнішої організації контенту.",
+    "url": "https://levende.github.io/lampa-plugins/custom-favs.js",
+    "local_url": "./plugins/custom-favs.js",
+    "author": "@levende",
+    "category": "other"
+  },
+  {
+    "id": "EpWatch",
+    "name": "EpWatch",
+    "description": "Стежить за новими серіями ваших улюблених серіалів і надсилає сповіщення в Telegram",
+    "url": "http://lampaua.mooo.com/epwatch.js",
+    "local_url": "./plugins/epwatch.js",
+    "author": "@bazarnetua",
+    "category": "other"
+  },
+  {
+    "id": "history-filter",
+    "name": "History Filter",
+    "description": "Фільтрування та видалення елементів з історії перегляду за різними критеріями.",
+    "url": "https://levende.github.io/lampa-plugins/history-filter.js",
+    "local_url": "./plugins/history-filter.js",
+    "author": "@levende",
+    "category": "other"
+  },
+  {
+    "id": "imdb-trailers",
+    "name": "IMDb Trailers",
+    "description": "Трендові трейлери з IMDb: горизонтальна лінія на головній, повноекранний режим з пагінацією та вибором якості.",
+    "url": "https://lampame.github.io/main/timdb.js",
+    "local_url": "./plugins/timdb.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "video"
+  },
+  {
+    "id": "infuse-save",
+    "name": "Infuse Save",
+    "description": "Додає дії Save to Infuse та Save all to Infuse у список торрент-файлів. Приводить посилання до сумісного формату і передає їх в Infuse через deeplink.",
+    "url": "https://lampame.github.io/main/infuseSave.js",
+    "local_url": "./plugins/infuseSave.js",
+    "author": "@lampame",
+    "category": "other"
+  },
+  {
+    "id": "interface",
+    "name": "Interface+",
+    "description": "Комплексний плагін інтерфейсу: теми оформлення, нова інфо-панель, кольорові рейтинги, вікові мітки й статуси. Додає оригінальну назву, альтернативні найближчі епізоди та гнучке налаштування бейджів на картках.",
+    "url": "https://ko31k.github.io/LMP/plugins/interface+.js",
+    "local_url": "./plugins/interface+.js",
+    "author": "@K031k",
+    "category": "theme"
+  },
+  {
+    "id": "lampac-src-filter",
+    "name": "Lampac Source Filter",
+    "description": "Фільтрує джерела Lampac, дозволяючи приховати небажані провайдери з видачі.",
+    "url": "https://levende.github.io/lampa-plugins/lampac-src-filter.js",
+    "local_url": "./plugins/lampac-src-filter.js",
+    "author": "@levende",
+    "category": "video"
+  },
+  {
+    "id": "lnum",
+    "name": "LNUM",
+    "description": "Додає каталог LNum як додаткове джерело контенту",
+    "url": "https://levende.github.io/lampa-plugins/lnum.js",
+    "local_url": "./plugins/lnum.js",
+    "author": "@levende",
+    "category": "collections"
+  },
+  {
+    "id": "lparty",
+    "name": "LParty",
+    "description": "Плагін який дозволяє дивитися одне й те саме синхронно з друзями на різних пристроях.",
+    "url": "https://nrsua.github.io/lampa-nrs/lparty.js",
+    "local_url": "./plugins/lparty.js",
+    "author": "@nrsua, @levende",
+    "category": "other"
+  },
+  {
+    "id": "movie-enhancer",
+    "name": "Movie Enhancer",
+    "description": "Модуль покращень інтерфейсу картки: редактор кнопок, режим іконок, додаткові рейтинги (MDBList/Streaming Discovery), перемикач джерел у шапці, англомовні метадані, якість та тривалість серій.",
+    "url": "https://lampame.github.io/main/lme.js",
+    "local_url": "./plugins/lme.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "theme"
+  },
+  {
+    "id": "netflix",
+    "name": "Netflix",
+    "description": "Перетворює головну сторінку на інтерфейс, дуже схожий на Netflix.",
+    "url": "https://adambenhassen.github.io/netflix.js",
+    "local_url": "./plugins/netflix.js",
+    "author": "@adambenhassen",
+    "category": "theme"
+  },
+  {
+    "id": "networks",
+    "name": "Networks",
+    "description": "Мод плагіну від @levende. Додає в картку кнопки стримінгів, де виходили проекти, та виробничих студій. Є можливість налаштування відступів, розмірів і центрування на смартфонах.\nНалаштування: Параметри → Інтерфейс → Платформи та студії.",
+    "url": "https://ko31k.github.io/LMP/plugins/Networks.js",
+    "local_url": "./plugins/Networks.js",
+    "author": "@K031k",
+    "category": "theme"
+  },
+  {
+    "id": "new-category",
+    "name": "New Category",
+    "description": "Розширює каталог Lampa новими категоріями (кіно, TV Top/New, концерти, документальні тощо), добірками за стримінговими мережами та країнами, а також системою закладок.",
+    "url": "https://lampame.github.io/main/newcategory.js",
+    "local_url": "./plugins/newcategory.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "collections"
+  },
+  {
+    "id": "nightingale",
+    "name": "Nightingale",
+    "description": "Додає на картки бейдж з прапором України, якщо WH API підтверджує наявність українського перекладу в Онлайн-джерелах.",
+    "url": "https://lampame.github.io/main/n.js",
+    "local_url": "./plugins/n.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "theme"
+  },
+  {
+    "id": "nightingale-notifications",
+    "name": "NightingaleNotifications",
+    "description": "Канал сповіщень Nightingale: підписка на серіали через дзвоник у картці, екран підписок, UID sync, автоімпорт з Lampa/TraktTV.",
+    "url": "https://lampame.github.io/main/nn.js",
+    "local_url": "./plugins/nn.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "other"
+  },
+  {
+    "id": "pipfs",
+    "name": "pipfs",
+    "description": "Дає можливість дивитись відео у вікні вбудованого плеєра лампи. \"Враховано\" перекривання навігаційного бара на мобільному, підтримка субтитрів у вікні (може багати але це не точно).",
+    "url": "https://cevamnelampaplagin.github.io/sharewithothers/pipfs.js",
+    "local_url": "./plugins/pipfs.js",
+    "author": "@nameoftelegr",
+    "category": "other"
+  },
+  {
+    "id": "profiles",
+    "name": "Profiles",
+    "description": "Керування профілями в Lampa без CUB: незалежні профілі з налаштуваннями, м'яке перемикання, інтеграція з Lampac.",
+    "url": "https://levende.github.io/lampa-plugins/profiles.js",
+    "local_url": "./plugins/profiles.js",
+    "author": "@levende",
+    "category": "other"
+  },
+  {
+    "id": "radio",
+    "name": "Radio",
+    "description": "Плагін «Radio» для Lampa додає в меню розділ з понад 50 радіостанціями (українські та світові).",
+    "url": "https://ne3nayskas.github.io/plugins/radio.js",
+    "local_url": "./plugins/radio.js",
+    "author": "@ne3nayskas",
+    "category": "radio"
+  },
+  {
+    "id": "random-scheduled",
+    "name": "Random Scheduled",
+    "description": "Випадковий вибір контенту із запланованого/відкладеного списку для перегляду.",
+    "url": "https://levende.github.io/lampa-plugins/random-scheduled.js",
+    "local_url": "./plugins/random-scheduled.js",
+    "author": "@levende",
+    "category": "collections"
+  },
+  {
+    "id": "remote-keyboard",
+    "name": "Remote Keyboard",
+    "description": "**Remote Keyboard**\nЗручний пульт. QR-підключення, тачпад, клавіатура та системні кнопки.",
+    "url": "https://kinohub.uk/remotekeyboard.js",
+    "local_url": "./plugins/remotekeyboard.js",
+    "author": "https://github.com/Hlushok",
+    "category": "control"
+  },
+  {
+    "id": "rtg",
+    "name": "RTG+",
+    "description": "Рейтинги й нагороди (Оскар, Еммі) у картці та на постері фільмів і серіалів. Підтримка IMDb, TMDB, Metacritic, Rotten Tomatoes, Popcornmeter, Trakt, Letterboxd та середньої оцінки. Гнучкі налаштування: стиль логотипів, прозорість, яскравість і ч/б вигляд. Потрібні API-ключі OMDb та MDBlist.",
+    "url": "https://ko31k.github.io/LMP/plugins/rtg.js",
+    "local_url": "./plugins/rtg.js",
+    "author": "@K031k",
+    "category": "other"
+  },
+  {
+    "id": "seasonsinfo",
+    "name": "SeasonsInfo",
+    "description": "Плагін відображає дані про серіали прямо на картках: показує останній актуальний сезон та прогрес виходу епізодів. Має окремий розділ керування в меню «Інтерфейс». Для повноцінної роботи необхідно отримати та вказати персональний API-ключ TMDb із сайту themoviedb.org.",
+    "url": "https://ko31k.github.io/LMP/plugins/SeasonsInfo.js",
+    "local_url": "./plugins/SeasonsInfo.js",
+    "author": "@K031k",
+    "category": "other"
+  },
+  {
+    "id": "siaivo-dorama",
+    "name": "Siaivo Dorama",
+    "description": "Додає окрему категорію дорам в бокову панель",
+    "url": "https://cdn.jsdelivr.net/gh/Lamp1ch-chmuk/dorami-Siaivo@main/d.js",
+    "local_url": "./plugins/d.js",
+    "author": "@Lamp1ch-chmuk",
+    "category": "collections"
+  },
+  {
+    "id": "trakt-tv",
+    "name": "TraktTV",
+    "description": "Глибока інтеграція з Trakt: OAuth, синхронізація переглядів/прогресу, списки/колекції, Up Next для серіалів, UI прогресу на картках.",
+    "url": "https://lampame.github.io/main/trakttv.js",
+    "local_url": "./plugins/trakttv.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "other"
+  },
+  {
+    "id": "trash-filter",
+    "name": "Trash Filter",
+    "description": "Фільтрує сміттєвий контент з результатів пошуку, прибираючи низькоякісні результати.",
+    "url": "https://levende.github.io/lampa-plugins/trash-filter.js",
+    "local_url": "./plugins/trash-filter.js",
+    "author": "@levende",
+    "category": "other"
+  },
+  {
+    "id": "tryzub-tv",
+    "name": "TryzubTV",
+    "description": "Провайдер українського ТБ-контенту з API TryzubTV: канали, категорії та каталог-лінії з кешуванням.",
+    "url": "https://lampame.github.io/main/ttv.js",
+    "local_url": "./plugins/ttv.js",
+    "author": "Lampa Movie Enhancer",
+    "category": "iptv"
+  },
+  {
+    "id": "tv-status-color",
+    "name": "TV Status Color",
+    "description": "Забарвлює статус серіалу (завершений, йде, очікується) відповідним кольором для швидкої візуальної орієнтації.",
+    "url": "https://levende.github.io/lampa-plugins/tv-status-color.js",
+    "local_url": "./plugins/tv-status-color.js",
+    "author": "@levende",
+    "category": "theme"
+  },
+  {
+    "id": "voboost",
+    "name": "VoBoost",
+    "description": "Плагін який дозволяє підняти гучність вище 100%, щоб «розігнати» надто тихі відео. Працює лише у вбудованому (HTML5) плеєрі.",
+    "url": "https://nrsua.github.io/lampa-nrs/voboost.js",
+    "local_url": "./plugins/voboost.js",
+    "author": "@nrsua",
+    "category": "other"
+  },
+  {
+    "id": "yariks-design",
+    "name": "Yarik's Design",
+    "description": "Пакет повного кастомного редизайну карток фільмів. Можливість вмикати горизонтальні картки. Налаштування бейджів інформації прямо на картці. Можливість додати кілька рейтингів на картку (Потрібні api ключі MDBlist+).  Зміна дизайну блоку серій, виправлення інформації про назву/дату/рейтинг.",
+    "url": "https://yarikrazor-star.github.io/lmp/ydes.js",
+    "local_url": "./plugins/ydes.js",
+    "author": "@YaroslavFilms",
+    "category": "theme"
+  },
+  {
+    "id": "ytranslate.js",
+    "name": "Ytranslate",
+    "description": "Автоматичний переклад назв, описів, слоганів Українською.",
+    "url": "https://yarikrazor-star.github.io/lmp/ytranslate.js",
+    "local_url": "./plugins/ytranslate.js",
+    "author": "@YaroslavFilms",
+    "category": "other"
+  },
+  {
+    "id": "salopower",
+    "name": "SaloPower",
+    "description": "Плагін українського онлайн-контенту SaloPower.",
+    "url": "https://lampame.github.io/main/sp.js",
+    "local_url": "./plugins/sp.js",
+    "author": "@lampame",
+    "category": "video"
+  },
+  {
+    "id": "uaserials",
+    "name": "UASerials",
+    "description": "Каталог та перегляд серіалів з українською озвучкою з сервісу UASerials.",
+    "url": "https://lampame.github.io/main/uaserials.js",
+    "local_url": "./plugins/uaserials.js",
+    "author": "@lampame",
+    "category": "video"
+  },
+  {
+    "id": "hikka",
+    "name": "Hikka",
+    "description": "Український аніме-каталог та онлайн перегляд Hikka.",
+    "url": "https://lampame.github.io/main/hikka.js",
+    "local_url": "./plugins/hikka.js",
+    "author": "@lampame",
+    "category": "video"
+  },
+  {
+    "id": "kinobaza",
+    "name": "Kinobaza",
+    "description": "Онлайн перегляд з сайту Kinobaza.",
+    "url": "https://lampame.github.io/main/kb.js",
+    "local_url": "./plugins/kb.js",
+    "author": "@lampame",
+    "category": "video"
+  },
+  {
+    "id": "vinyl",
+    "name": "Vinyl Music",
+    "description": "Музичний плеєр та аудіо-добірки всередині Lampa.",
+    "url": "https://lampame.github.io/main/music.js",
+    "local_url": "./plugins/music.js",
+    "author": "@lme_chat",
+    "category": "radio"
+  },
+  {
+    "id": "hlushok-redirect",
+    "name": "Server Redirect Switcher",
+    "description": "Зручний перемикач серверів: KinoHub, Lampa UA, Сяєво UA, Lampa MX.",
+    "url": "https://raw.githubusercontent.com/Hlushok/lampa-plugin/main/redirect.js",
+    "local_url": "./plugins/redirect.js",
+    "author": "Hlushok",
+    "category": "other"
+  },
+  {
+    "id": "nova-skin",
+    "name": "Nova Skin",
+    "description": "Сучасний темний інтерфейсний скін Nova для Lampa від Hlushok.",
+    "url": "https://raw.githubusercontent.com/Hlushok/nova-skin/main/nova_skin.js",
+    "local_url": "./plugins/nova_skin.js",
+    "author": "Hlushok",
+    "category": "theme"
+  },
+  {
+    "id": "nova-skin-premium",
+    "name": "Nova Skin Premium",
+    "description": "Преміум версія скіна Nova з розширеними налаштуваннями віджетів та постерами.",
+    "url": "https://raw.githubusercontent.com/Hlushok/lampa-plugin/main/nova_skin_premium.js",
+    "local_url": "./plugins/nova_skin_premium.js",
+    "author": "Hlushok",
+    "category": "theme"
+  },
+  {
+    "id": "gold-theme",
+    "name": "Gold Theme",
+    "description": "Золота стилістика оформлення інтерфейсу Lampa.",
+    "url": "https://raw.githubusercontent.com/Hlushok/lampa-plugin/main/gold_theme.js",
+    "local_url": "./plugins/gold_theme.js",
+    "author": "Hlushok",
+    "category": "theme"
+  },
+  {
+    "id": "lampaua-look",
+    "name": "LampaUA Look",
+    "description": "Фірмове оформлення та колірна палітра LampaUA.",
+    "url": "https://raw.githubusercontent.com/Hlushok/lampa-plugin/main/lampaua_look.js",
+    "local_url": "./plugins/lampaua_look.js",
+    "author": "Hlushok",
+    "category": "theme"
+  },
+  {
+    "id": "mycinema",
+    "name": "MyCinema",
+    "description": "Онлайн джерело MyCinema для перегляду фільмів.",
+    "url": "https://raw.githubusercontent.com/Hlushok/lampa-plugin/main/MyCinema.js",
+    "local_url": "./plugins/MyCinema.js",
+    "author": "Hlushok",
+    "category": "video"
+  }
+]

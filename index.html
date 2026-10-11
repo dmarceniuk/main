@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lampa Online Hub — Онлайн-кінотеатр (Без торрентів)</title>
+
+    <meta name="description" content="Сучасний застосунок для безпечного онлайн перегляду фільмів та серіалів через прямі HTTP/HLS стріми (Bandera Online, StreamHub, UASerials). Жодного P2P/BitTorrent трафіку — 100% безпечно для ЄС/Іспанії." />
+
+    <meta property="og:title" content="Lampa Online Hub — Онлайн-кінотеатр">
+    <meta property="og:description" content="Прямий онлайн перегляд фільмів та серіалів без торентів. Безпечно, швидко, українізовано.">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image" content="./og-siaivo.png">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="manifest" href="icons/site.webmanifest" crossorigin="use-credentials">
+    <link rel="mask-icon" href="icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="icons/favicon.ico">
+    <meta name="msapplication-TileColor" content="#1d1f20">
+    <meta name="msapplication-config" content="icons/browserconfig.xml">
+    <meta name="theme-color" content="#1d1f20">
+
+    <meta name="referrer" content="never">
+    
+    <link rel="stylesheet" href="./vender/scrollbar/jquery.scrollbar.css">
+    <link rel="stylesheet" href="./vender/keypad/style.css">
+    <link rel="stylesheet" href="css/app.css?v=4.56">
+
+    <style>
+        /* ============================================================
+           Жорстке блокування будь-яких P2P/BitTorrent елементів в UI
+           Гарантія безпеки для користувачів в Іспанії та країнах ЄС
+           ============================================================ */
+        .view--torrent,
+        .view--torrents,
+        .button--priority.view--torrent,
+        [data-action="mytorrents"],
+        [data-component="parser"],
+        [data-component="server"],
+        .torrent-item,
+        .settings-folder[data-component="parser"],
+        .settings-folder[data-component="server"] {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</head>
+<body style="background: #1d1f20;">
+    <script>
+        window.youtube_lazy_load = true;
+        // Глобальні налаштування Lampa: вимикаємо торенти та парсери
+        window.lampa_settings = {
+            torrents_use: false,
+            white_use: false,
+            plugins_use: true,
+            plugins_store: true,
+            account_use: true,
+            account_sync: true,
+            lang_use: true,
+            socket_use: true,
+            disable_features: {
+                dmca: false,
+                lgbt: false,
+                reactions: false,
+                discuss: false,
+                ai: false,
+                subscribe: false,
+                blacklist: false,
+                persons: false,
+                ads: false,
+                trailers: false,
+                install_proxy: false,
+                remote_configuration: false
+            }
+        };
+    </script>
+
+    <div class="welcome"></div>
+    <script>
+        ;(function () {
+            var welcome = document.querySelector('.welcome')
+            var backgrounds = [
+                'img/welcome/welcome-1.jpg',
+                'img/welcome/welcome-2.jpg',
+                'img/welcome/welcome-3.jpg',
+                'img/welcome/welcome-4.jpg',
+                'img/welcome/welcome-5.jpg',
+                'img/welcome/welcome-6-ukraine.jpg',
+                'img/welcome/welcome-7.png',
+                'img/welcome/welcome-8.png',
+                'img/welcome/welcome-9.png',
+                'img/welcome/welcome-10.png',
+                'img/welcome/welcome-11.png'
+            ]
+
+            if (!welcome || !backgrounds.length) return
+
+            var oldLogo = welcome.querySelector('.welcome__logo')
+            if (oldLogo) oldLogo.remove()
+
+            var style = document.getElementById('lampaua-welcome-style')
+            if (!style) {
+                style = document.createElement('style')
+                style.id = 'lampaua-welcome-style'
+                style.textContent =
+                    '.welcome{background-color:#03050a!important;background-size:cover!important;background-position:center!important;overflow:hidden;}' +
+                    '.welcome:before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 50% 45%,rgba(31,118,204,.22),transparent 26%),linear-gradient(90deg,rgba(0,0,0,.9),rgba(3,5,10,.5) 35%,rgba(3,5,10,.56) 65%,rgba(0,0,0,.92)),linear-gradient(180deg,rgba(0,0,0,.82),rgba(0,0,0,.3) 42%,rgba(0,0,0,.88));}' +
+                    '.welcome:after{content:"";position:absolute;inset:-20%;z-index:1;pointer-events:none;background:linear-gradient(108deg,transparent 0 47%,rgba(255,216,0,.5) 49%,rgba(38,139,255,.52) 50%,transparent 53%),linear-gradient(90deg,transparent 0 30%,rgba(38,139,255,.24) 30.2%,transparent 30.55%,transparent 68%,rgba(255,216,0,.2) 68.2%,transparent 68.55%);opacity:.7;animation:lampauaLines 5.5s ease-in-out infinite alternate;}' +
+                    '.welcome__lampaua-intro{position:absolute;left:50%;top:43%;z-index:2;transform:translate(-50%,-50%);font-family:Arial Black,Segoe UI,sans-serif;font-size:min(11vw,7.8em);font-weight:900;letter-spacing:.08em;text-transform:uppercase;line-height:1;color:#ffd800;text-shadow:-.045em 0 0 rgba(38,139,255,.9),0 0 .45em rgba(0,0,0,.85);pointer-events:none;user-select:none;opacity:.92;animation:lampauaTitle 3.8s ease-in-out infinite;text-align:center;}' +
+                    '.welcome__lampaua-intro span{color:#268bff;text-shadow:.045em 0 0 rgba(255,216,0,.88),0 0 .45em rgba(0,0,0,.85);}' +
+                    '.welcome__lampaua-badge{font-size:0.25em;letter-spacing:0.2em;color:#4ade80;display:block;margin-top:0.4em;text-shadow:0 0 10px rgba(74,222,128,0.5);}' +
+                    '@keyframes lampauaTitle{0%{opacity:.75;transform:translate(-50%,-50%) scale(.985)}45%{opacity:.98;transform:translate(-50%,-50%) scale(1.015)}100%{opacity:.82;transform:translate(-50%,-50%) scale(1)}}' +
+                    '@keyframes lampauaLines{0%{transform:translate3d(-1.5%,0,0)}100%{transform:translate3d(1.5%,0,0)}}'
+                document.head.appendChild(style)
+            }
+
+            var brand = welcome.querySelector('.welcome__lampaua-intro')
+            if (!brand) {
+                brand = document.createElement('div')
+                brand.className = 'welcome__lampaua-intro'
+                brand.innerHTML = 'Lampa<span>Online</span><span class="welcome__lampaua-badge">100% DIRECT STREAMING</span>'
+                welcome.appendChild(brand)
+            }
+
+            var selected = backgrounds[Math.floor(Math.random() * backgrounds.length)]
+            var image = new Image()
+
+            image.onload = function () {
+                welcome.style.backgroundImage = 'url("' + selected + '")'
+            }
+
+            image.src = selected
+        })()
+    </script>
+
+    <div id="app"></div>
+
+    <div class="no-network hide">
+        <div class="no-network__title">Помилка мережі</div>
+        <div class="no-network__desc">Не вдалося завантажити файл: <span class="no-network__file"></span></div>
+    </div>
+    
+    <script src="./webos/webOSTV.js"></script>
+    <script src="./vender/jquery/jquery.js"></script>
+    <script src="./vender/notify/notify.js"></script>
+    <script src="./vender/scrollbar/jquery.scrollbar.js"></script>
+    <script src="./vender/navigator/navigator.js"></script>
+    <script src="./vender/keypad/keypad.js"></script>
+
+    <script>
+        var lampa_url     = '';
+        var cache_version = Math.floor((new Date()).getTime() / 9e5);
+            
+        function urlJoin(base, add) {
+            if (base.charAt(base.length - 1) !== '/') {
+                base += '/'
+            }
+            return base + add
+        }
+
+        function putScript(scripts, onload, onerror){
+            var add = function(src){
+                console.log('Loader', 'try-load-script', src)
+                var trys = 0
+
+                var sreateScript = function(){
+                    var script = document.createElement('script')
+                    script.type = 'text/javascript'
+
+                    script.onload = script.onreadystatechange = function(e) {
+                        console.log('Loader', 'Script loaded', e)
+                        if (!!onload) onload()
+                    };
+
+                    script.onerror = function(){
+                        trys++
+                        console.log('Loader', 'error-load-script', src)
+
+                        if(trys < 3){
+                            sreateScript()
+                        } else if (!!onerror) {
+                            onerror()
+                        } else{
+                            $('.no-network').removeClass('hide')
+                            $('.no-network__file').text(window.location.href + '/' + src)
+                        }
+                    }
+
+                    script.src = src
+                    document.getElementsByTagName('body')[0].appendChild(script)
+                }
+
+                sreateScript()
+            }
+
+            add(scripts)
+        }
+
+        function loadCurrentLampa() {
+            putScript('app.min.js?v=' + cache_version, function () {})
+        }
+
+        function loadLocalLampa(){
+            if(lampa_url !== '') window.local_lampa = true
+            loadCurrentLampa()
+        }
+
+        if (typeof AndroidJS !== "undefined"
+            && !!AndroidJS.getLampaURL
+            && /^https?:\/\//i.test(AndroidJS.getLampaURL())
+            && !/^https?:\/\//i.test(location.href)
+        ) {
+            lampa_url = urlJoin(AndroidJS.getLampaURL(),'')
+        }
+
+        if (lampa_url !== '') {
+            putScript(
+                urlJoin(lampa_url, 'app.min.js?v=' + cache_version),
+                function () {
+                    var css = urlJoin(lampa_url, 'css/app.css?v=' + cache_version)
+                    $('head').append('<link rel="stylesheet" href="' + css + '">')
+                },
+                loadLocalLampa
+            )
+        }
+        else {
+            loadCurrentLampa()
+        }
+    </script>
+</body>
+</html>

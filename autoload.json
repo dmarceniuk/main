@@ -1,0 +1,57 @@
+[
+  {
+    "url": "./plugins/bo.js",
+    "name": "Bandera 2.0 (Онлайн джерела)",
+    "author": "@lampame"
+  },
+  {
+    "url": "./plugins/streamhub.js",
+    "name": "StreamHub (Онлайн агрегатор)",
+    "author": "Treamz"
+  },
+  {
+    "url": "./plugins/uaserials.js",
+    "name": "UASerials (Українські серіали)",
+    "author": "LME"
+  },
+  {
+    "url": "./plugins/avgrating.js",
+    "name": "AVGRating (Рейтинги 11 сайтів)",
+    "author": "cevamnelampaplagin"
+  },
+  {
+    "url": "./plugins/n.js",
+    "name": "Nightingale (Прапорець UA озвучки)",
+    "author": "LME"
+  },
+  {
+    "url": "./plugins/balancer-sanitizer.js",
+    "name": "Balancer Sanitizer (Очистка TS та банів)",
+    "author": "@levende"
+  },
+  {
+    "url": "./plugins/cardify+.js",
+    "name": "Cardify+ (Покращені картки та бейджі)",
+    "author": "@K031k"
+  },
+  {
+    "url": "./plugins/lparty.js",
+    "name": "LParty (Спільний перегляд онлайн)",
+    "author": "@nrsua, @levende"
+  },
+  {
+    "url": "./plugins/cw.js",
+    "name": "CommunityWatches (Добірки спільноти)",
+    "author": "@lampame"
+  },
+  {
+    "url": "./plugins/radio.js",
+    "name": "Vinyl (Фонове онлайн-радіо)",
+    "author": "@lme_chat"
+  },
+  {
+    "url": "./plugins/ttv.js",
+    "name": "TryzubTV (Українське онлайн-ТБ)",
+    "author": "LME"
+  }
+]
