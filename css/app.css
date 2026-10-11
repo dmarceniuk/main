@@ -14058,3 +14058,29 @@ body.glass--style.platform--android .player-chat__body {
   -webkit-backdrop-filter: blur(1em);
           backdrop-filter: blur(1em);
 }
+
+/* ============================================================
+   Layout Width & Height Fixes for Modern Web Browsers & Smart TVs
+   ============================================================ */
+.layer--width {
+  width: 100% !important;
+}
+.wrap__content {
+  -webkit-box-flex: 1 !important;
+  -webkit-flex-grow: 1 !important;
+  -ms-flex-positive: 1 !important;
+  flex-grow: 1 !important;
+  width: 100% !important;
+}
+.activitys {
+  width: 100% !important;
+}
+.activitys__slides {
+  width: 100% !important;
+}
+.activity {
+  width: 100% !important;
+}
+.full-start {
+  width: 100% !important;
+}
