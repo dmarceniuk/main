@@ -103,7 +103,11 @@
       })
       .catch(function (err) {
         if (timer) clearTimeout(timer);
-        console.warn('StreamHub fetchStreams error:', err);
+        if (err && (err.name === 'AbortError' || (err.message && err.message.indexOf('abort') !== -1))) {
+          console.log('[StreamHub] Backend server (' + base + ') is offline or timed out.');
+        } else {
+          console.warn('[StreamHub] fetchStreams error:', err);
+        }
         return [];
       });
   }

@@ -413,7 +413,6 @@
                 $.ajax({
                     url: 'https://shikimori.io/api/animes?search=' + encodeURIComponent(q) + '&limit=8',
                     dataType: 'json',
-                    headers: { 'User-Agent': 'Lampa-MAL-Plugin/1.2' },
                     timeout: 8000,
                     success: function(data) {
                         var anime = pickBestFromShiki(data);

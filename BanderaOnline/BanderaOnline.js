@@ -111,10 +111,19 @@
     var req = new Lampa.Reguest();
     req.timeout(15000);
     req.silent(uaserialsProxy(url), function(text) {
-      if (typeof text === 'string') success(text);
+      if (typeof text === 'string') {
+        if (text.indexOf('Just a moment...') !== -1 || text.indexOf('challenge-platform') !== -1 || text.indexOf('challenge-error-text') !== -1) {
+          Lampa.Noty.show('UASerials: захист Cloudflare. Оберіть UAFlix або інший балансер.');
+          if (fail) fail(new Error('Cloudflare challenge'));
+          return;
+        }
+        success(text);
+      }
       else if (text && typeof text === 'object') success(JSON.stringify(text));
       else success(text);
-    }, fail, false, { dataType: 'text' });
+    }, function(err) {
+      if (fail) fail(err);
+    }, false, { dataType: 'text' });
   }
 
   function uaserialsDecryptTag(tagStr, callback, fail) {
@@ -1707,7 +1716,7 @@
       this.available_sources = Lampa.Storage.get(this.sources_key, []);
       if (!Array.isArray(this.available_sources)) this.available_sources = [];
       if (!this.available_sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
-        this.available_sources.unshift({
+        this.available_sources.push({
           name: 'UASerials',
           key: 'uaserials',
           enabled: true,
@@ -1782,7 +1791,7 @@
         var sorted = this.getSorted();
         var result = list.slice(0);
         if (result.indexOf('uaserials') === -1) {
-          result.unshift('uaserials');
+          result.push('uaserials');
         }
         if (sorted.length) {
           var ordered = [];
@@ -1800,7 +1809,7 @@
           });
         }
         if (result.indexOf('uaserials') === -1 && hidden.indexOf('uaserials') === -1) {
-          result.unshift('uaserials');
+          result.push('uaserials');
         }
         return result;
       }
@@ -1931,19 +1940,19 @@
       sources = filterEnabledSources(sources);
       sources = sourcesStore.applyUserFilters(sources);
       if (sources.indexOf('uaserials') === -1) {
-        sources.unshift('uaserials');
+        sources.push('uaserials');
       }
       return sources;
     }
     function getBaseSources() {
       var from_api = getEnabledSources();
       if (from_api) {
-        if (from_api.indexOf('uaserials') === -1) from_api.unshift('uaserials');
+        if (from_api.indexOf('uaserials') === -1) from_api.push('uaserials');
         return from_api;
       }
       var keys = Object.keys(sources);
-      if (keys.indexOf('uaserials') === -1) keys.unshift('uaserials');
-      return keys.length ? keys : ['uaserials'];
+      if (keys.indexOf('uaserials') === -1) keys.push('uaserials');
+      return keys.length ? keys : ['uaflix', 'uaserials'];
     }
     function filterEnabledSources(list) {
       var enabled = getEnabledSources();
@@ -1953,24 +1962,24 @@
       });
     }
     function getEnabledSources() {
-      if (!available_sources || !available_sources.length) return ['uaserials'];
+      if (!available_sources || !available_sources.length) return ['uaflix', 'uaserials'];
       var enabled = available_sources.filter(function (item) {
         return item && item.enabled !== false;
       }).map(function (item) {
         return sourcesStore.normalizeName(item.key || item.name);
       }).filter(Boolean);
       if (enabled.indexOf('uaserials') === -1) {
-        enabled.unshift('uaserials');
+        enabled.push('uaserials');
       }
       enabled.forEach(function (name) {
         return ensureSource(name);
       });
-      return enabled.length ? enabled : ['uaserials'];
+      return enabled.length ? enabled : ['uaflix', 'uaserials'];
     }
     function loadAvailableSources(call) {
       var cached = Lampa.Storage.get(sourcesStore.sources_key, null);
       if (cached && Array.isArray(cached) && !cached.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
-        cached.unshift({
+        cached.push({
           name: 'UASerials',
           key: 'uaserials',
           enabled: true,
@@ -1981,7 +1990,7 @@
       api_client.getSources(function (json) {
         if (json && json.ok && Array.isArray(json.sources)) {
           if (!json.sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
-            json.sources.unshift({
+            json.sources.push({
               name: 'UASerials',
               key: 'uaserials',
               enabled: true,
@@ -2114,10 +2123,10 @@
         balanser = last_select_balanser[object.movie.id];
         Lampa.Storage.set('bandera_online_last_balanser', last_select_balanser);
       } else {
-        balanser = Lampa.Storage.get('bandera_online_balanser', 'uatut');
+        balanser = Lampa.Storage.get('bandera_online_balanser', 'uaflix');
       }
-      if (!ensureSource(balanser) || filter_sources.indexOf(balanser) === -1) {
-        balanser = filter_sources[0] || '';
+      if (!ensureSource(balanser) || filter_sources.indexOf(balanser) === -1 || balanser === 'uatut') {
+        balanser = (filter_sources.indexOf('uaflix') !== -1 ? 'uaflix' : filter_sources[0]) || '';
       }
       if (!ensureSource(balanser)) {
         return null;
