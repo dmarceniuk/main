@@ -49,7 +49,7 @@ async function handleRequest(request) {
 
             fp.headers['user-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36';
 
-            if (url.indexOf('rezka') >= 0 || url.indexOf('kinopub.me') {
+            if (url.indexOf('rezka') >= 0 || url.indexOf('kinopub.me') >= 0) {
                 fp.headers['X-Real-IP'] = reqHeaders.get('realip') || request.headers.get('CF-Connecting-IP');
                 fp.headers['Origin'] = apiUrl.origin;
                 fp.headers['Referer'] = apiUrl.origin + "/"; 

@@ -98,32 +98,70 @@
 
   
   /* ============================================================
-     UASERIALS EXTENSION FOR BANDERA ONLINE (v2.1 - Robust CryptoJS)
+     UASERIALS EXTENSION FOR BANDERA ONLINE (v2.2 - Universal Robust)
      ============================================================ */
+  var UASERIALS_BASE = 'https://uaserials.com';
   var UASERIALS_PROXY = 'https://api.framextv.tech/api/proxy?url=';
   var UASERIALS_KEY = '297796CCB81D255125';
 
+  function isNativePlatform() {
+    try {
+      if (window.location && window.location.protocol === 'file:') return true;
+      if (window.Lampa && Lampa.Platform) {
+        if (Lampa.Platform.is('android') || Lampa.Platform.is('tizen') || Lampa.Platform.is('webos') || Lampa.Platform.is('nw')) {
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  }
+
   function uaserialsProxy(url) {
+    var custom = (window.Lampa && Lampa.Storage && Lampa.Storage.get('uaserials_proxy', '')) || '';
+    if (custom) return custom + encodeURIComponent(url);
     return UASERIALS_PROXY + encodeURIComponent(url);
   }
 
   function uaserialsFetch(url, success, fail) {
-    var req = new Lampa.Reguest();
-    req.timeout(15000);
-    req.silent(uaserialsProxy(url), function(text) {
+    var nativeMode = isNativePlatform();
+    if (nativeMode) {
+      var directReq = new Lampa.Reguest();
+      directReq.timeout(15000);
+      directReq.silent(url, function(text) {
+        handleResponse(text, success, fail, false);
+      }, function() {
+        fetchViaProxy(url, success, fail);
+      }, false, { dataType: 'text' });
+    } else {
+      fetchViaProxy(url, success, fail);
+    }
+
+    function fetchViaProxy(targetUrl, s, f) {
+      var req = new Lampa.Reguest();
+      req.timeout(15000);
+      req.silent(uaserialsProxy(targetUrl), function(text) {
+        handleResponse(text, s, f, true);
+      }, function(err) {
+        if (f) f(err);
+      }, false, { dataType: 'text' });
+    }
+
+    function handleResponse(text, s, f) {
       if (typeof text === 'string') {
         if (text.indexOf('Just a moment...') !== -1 || text.indexOf('challenge-platform') !== -1 || text.indexOf('challenge-error-text') !== -1) {
-          Lampa.Noty.show('UASerials: захист Cloudflare. Оберіть UAFlix або інший балансер.');
-          if (fail) fail(new Error('Cloudflare challenge'));
+          if (window.Lampa && Lampa.Noty) {
+            Lampa.Noty.show('UASerials: захист Cloudflare. Оберіть UAFlix або інший балансер.');
+          }
+          if (f) f(new Error('Cloudflare challenge'));
           return;
         }
-        success(text);
+        s(text);
+      } else if (text && typeof text === 'object') {
+        s(JSON.stringify(text));
+      } else {
+        s(text);
       }
-      else if (text && typeof text === 'object') success(JSON.stringify(text));
-      else success(text);
-    }, function(err) {
-      if (fail) fail(err);
-    }, false, { dataType: 'text' });
+    }
   }
 
   function uaserialsDecryptTag(tagStr, callback, fail) {
@@ -183,6 +221,11 @@
 
   function cleanStr(s) {
     if (!s) return '';
+    try {
+      if (typeof s.normalize === 'function') {
+        s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
+    } catch (e) {}
     return s.toLowerCase()
       .replace(/<[^>]+>/g, '')
       .replace(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -191,16 +234,27 @@
   }
 
   function parseUASerialsCards(html) {
+    if (!html) return [];
     var items = [];
-    var cardRegex = /<a[^>]+class="[^"]*uas-card[^"]*"[^>]+href="([^"]+)"[\s\S]*?<span[^>]+class="uas-card__title"[^>]*>([^<]+)<\/span>(?:[\s\S]*?<span[^>]+class="uas-card__orig"[^>]*>([\s\S]*?)<\/span>)?(?:[\s\S]*?<span[^>]+class="uas-card__year"[^>]*>(\d+)<\/span>)?/g;
-    var m;
-    while ((m = cardRegex.exec(html)) !== null) {
-      items.push({
-        href: m[1],
-        title: m[2].trim(),
-        orig: m[3] ? m[3].replace(/<[^>]+>/g, '').trim() : '',
-        year: m[4] ? m[4].trim() : ''
-      });
+    var cardRegex = /<a[^>]+class="[^"]*uas-card[^"]*"[\s\S]*?<\/a>/gi;
+    var match;
+    while ((match = cardRegex.exec(html)) !== null) {
+      var cardHtml = match[0];
+      var hrefM = cardHtml.match(/href="([^"]+)"/i);
+      var titleM = cardHtml.match(/class="uas-card__title"[^>]*>([\s\S]*?)<\/span>/i);
+      var origM = cardHtml.match(/class="uas-card__orig"[^>]*>([\s\S]*?)<\/span>/i);
+      var yearM = cardHtml.match(/class="uas-card__year"[^>]*>(\d+)<\/span>/i);
+      var ratingM = cardHtml.match(/class="uas-card__rating"[^>]*>([\d\.]+)<\/span>/i);
+
+      if (hrefM && titleM) {
+        items.push({
+          href: hrefM[1],
+          title: titleM[1].replace(/<[^>]+>/g, '').trim(),
+          orig: origM ? origM[1].replace(/<[^>]+>/g, '').trim() : '',
+          year: yearM ? yearM[1].trim() : '',
+          rating: ratingM ? ratingM[1].trim() : ''
+        });
+      }
     }
     return items;
   }
@@ -253,14 +307,24 @@
     var movie = (object && object.movie) || {};
     var origQuery = (params.original_title || movie.original_title || movie.original_name || '').trim();
     var uaQuery = (params.title || movie.title || movie.name || '').trim();
-    var primaryQuery = origQuery || uaQuery;
+    
+    var primaryQuery = origQuery;
+    var secondaryQuery = uaQuery;
+    if ((!origQuery || (origQuery.length <= 4 && uaQuery.length > origQuery.length)) && uaQuery) {
+      primaryQuery = uaQuery;
+      secondaryQuery = origQuery;
+    } else if (!primaryQuery) {
+      primaryQuery = uaQuery;
+      secondaryQuery = '';
+    }
+
     if (!primaryQuery) {
       if (fail) fail();
       return;
     }
 
     var cleanPrimary = primaryQuery.replace(/[:,\.!\?#\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
-    var searchUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(cleanPrimary);
+    var searchUrl = UASERIALS_BASE + '/index.php?do=search&subaction=search&story=' + encodeURIComponent(cleanPrimary);
 
     uaserialsFetch(searchUrl, function(html) {
       var items = parseAndFilter(html);
@@ -268,10 +332,9 @@
         return success(items);
       }
 
-      var secondaryQuery = (primaryQuery === origQuery ? uaQuery : origQuery);
       if (secondaryQuery && secondaryQuery !== primaryQuery) {
         var cleanSecondary = secondaryQuery.replace(/[:,\.!\?#\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
-        var retryUrl = 'https://uaserials.com/index.php?do=search&subaction=search&story=' + encodeURIComponent(cleanSecondary);
+        var retryUrl = UASERIALS_BASE + '/index.php?do=search&subaction=search&story=' + encodeURIComponent(cleanSecondary);
         uaserialsFetch(retryUrl, function(html2) {
           var items2 = parseAndFilter(html2);
           if (items2.length) {
@@ -341,99 +404,116 @@
               return;
             }
 
-            if (decoded.indexOf('http') === 0) {
-              success({
+            decoded = decoded.trim();
+
+            // Case A: Pure Playlist JSON (Series with seasons/folders)
+            if (decoded.indexOf('[') === 0 || decoded.indexOf('{') === 0) {
+              try {
+                var playlist = JSON.parse(decoded);
+                if (Array.isArray(playlist) && playlist.length && (playlist[0].folder || playlist[0].season)) {
+                  var voicesMap = {};
+                  for (var i = 0; i < playlist.length; i++) {
+                    var s = playlist[i];
+                    var sNum = parseInt(s.season || s.number || (i + 1), 10);
+                    var eps = s.folder || [];
+                    for (var j = 0; j < eps.length; j++) {
+                      var ep = eps[j];
+                      var epNum = parseInt(ep.number || (j + 1), 10);
+                      var epTitle = ep.title || ('Серія ' + epNum);
+                      var fileStr = ep.file || '';
+
+                      var voiceMatches = [];
+                      var vRegex = /(?:\{([^}]+)\})?(https?:\/\/[^\s\(\{\"]+)(?:\(subtitle:\[([^\]]+)\](https?:\/\/[^\)\s]+)\))?/g;
+                      var vm;
+                      while ((vm = vRegex.exec(fileStr)) !== null) {
+                        var vName = vm[1] ? vm[1].trim() : 'UASerials';
+                        var streamUrl = vm[2].trim();
+                        var subLabel = vm[3] ? vm[3].trim() : '';
+                        var subUrl = vm[4] ? vm[4].trim() : '';
+                        voiceMatches.push({ voice: vName, url: streamUrl, subLabel: subLabel, subUrl: subUrl });
+                      }
+
+                      if (voiceMatches.length > 0) {
+                        for (var k = 0; k < voiceMatches.length; k++) {
+                          var vmItem = voiceMatches[k];
+                          if (!voicesMap[vmItem.voice]) voicesMap[vmItem.voice] = {};
+                          if (!voicesMap[vmItem.voice][sNum]) voicesMap[vmItem.voice][sNum] = [];
+                          var epObj = {
+                            id: ep.id || (sNum + '-' + epNum),
+                            title: epTitle,
+                            episode: epNum,
+                            url: vmItem.url,
+                            ref: { url: vmItem.url }
+                          };
+                          if (vmItem.subUrl) {
+                            epObj.subtitles = [{ label: vmItem.subLabel || 'Українські', url: vmItem.subUrl }];
+                          }
+                          if (ep.poster) epObj.thumbnail = ep.poster;
+                          voicesMap[vmItem.voice][sNum].push(epObj);
+                        }
+                      }
+                    }
+                  }
+
+                  var voices = [];
+                  for (var vKey in voicesMap) {
+                    var seasons = [];
+                    for (var sKey in voicesMap[vKey]) {
+                      seasons.push({
+                        season: parseInt(sKey, 10),
+                        title: 'Сезон ' + sKey,
+                        episodes: voicesMap[vKey][sKey]
+                      });
+                    }
+                    seasons.sort(function(a, b) { return a.season - b.season; });
+                    voices.push({
+                      id: vKey,
+                      display_name: vKey,
+                      seasons: seasons
+                    });
+                  }
+
+                  if (voices.length) {
+                    return success({
+                      ok: true,
+                      type: 'series',
+                      voices: voices
+                    });
+                  }
+                }
+              } catch (parseErr) {}
+            }
+
+            // Case B: Movie (Direct stream, voice-tagged streams, or subtitles)
+            var movieStreams = [];
+            var mvRegex = /(?:\{([^}]+)\})?(https?:\/\/[^\s\(\{\"]+)(?:\(subtitle:\[([^\]]+)\](https?:\/\/[^\)\s]+)\))?/g;
+            var mvm;
+            while ((mvm = mvRegex.exec(decoded)) !== null) {
+              var mVoice = mvm[1] ? mvm[1].trim() : 'UASerials';
+              var mUrl = mvm[2].trim();
+              var mSubLabel = mvm[3] ? mvm[3].trim() : '';
+              var mSubUrl = mvm[4] ? mvm[4].trim() : '';
+              var streamObj = {
+                title: mVoice + ' (1080p)',
+                quality: '1080p',
+                url: mUrl,
+                ref: { url: mUrl }
+              };
+              if (mSubUrl) {
+                streamObj.subtitles = [{ label: mSubLabel || 'Українські', url: mSubUrl }];
+              }
+              movieStreams.push(streamObj);
+            }
+
+            if (movieStreams.length) {
+              return success({
                 ok: true,
                 type: 'movie',
-                streams: [{
-                  title: 'UASerials (1080p)',
-                  quality: '1080p',
-                  url: decoded,
-                  ref: { url: decoded }
-                }]
-              });
-              return;
-            }
-
-            var playlist = JSON.parse(decoded);
-            var voicesMap = {};
-            for (var i = 0; i < playlist.length; i++) {
-              var s = playlist[i];
-              var sNum = parseInt(s.season || s.number || (i + 1), 10);
-              var eps = s.folder || [];
-              for (var j = 0; j < eps.length; j++) {
-                var ep = eps[j];
-                var epNum = parseInt(ep.number || (j + 1), 10);
-                var epTitle = ep.title || ('Серія ' + epNum);
-                var fileStr = ep.file || '';
-
-                var voiceMatches = [];
-                var vRegex = /\{([^}]+)\}(https?:\/\/[^\s\(\{]+)/g;
-                var vm;
-                while ((vm = vRegex.exec(fileStr)) !== null) {
-                  voiceMatches.push({ voice: vm[1].trim(), url: vm[2].trim() });
-                }
-
-                if (voiceMatches.length > 0) {
-                  for (var k = 0; k < voiceMatches.length; k++) {
-                    var vName = voiceMatches[k].voice;
-                    var streamUrl = voiceMatches[k].url;
-                    if (!voicesMap[vName]) voicesMap[vName] = {};
-                    if (!voicesMap[vName][sNum]) voicesMap[vName][sNum] = [];
-                    voicesMap[vName][sNum].push({
-                      id: ep.id || (sNum + '-' + epNum),
-                      title: epTitle,
-                      episode: epNum,
-                      url: streamUrl,
-                      ref: { url: streamUrl }
-                    });
-                  }
-                } else {
-                  var urlM = fileStr.match(/https?:\/\/[^\s\(\{]+/);
-                  if (urlM) {
-                    var defName = 'За замовчуванням';
-                    if (!voicesMap[defName]) voicesMap[defName] = {};
-                    if (!voicesMap[defName][sNum]) voicesMap[defName][sNum] = [];
-                    voicesMap[defName][sNum].push({
-                      id: ep.id || (sNum + '-' + epNum),
-                      title: epTitle,
-                      episode: epNum,
-                      url: urlM[0],
-                      ref: { url: urlM[0] }
-                    });
-                  }
-                }
-              }
-            }
-
-            var voices = [];
-            for (var vKey in voicesMap) {
-              var seasons = [];
-              for (var sKey in voicesMap[vKey]) {
-                seasons.push({
-                  season: parseInt(sKey, 10),
-                  title: 'Сезон ' + sKey,
-                  episodes: voicesMap[vKey][sKey]
-                });
-              }
-              seasons.sort(function(a, b) { return a.season - b.season; });
-              voices.push({
-                id: vKey,
-                display_name: vKey,
-                seasons: seasons
+                streams: movieStreams
               });
             }
 
-            if (!voices.length) {
-              if (fail) fail();
-              return;
-            }
-
-            success({
-              ok: true,
-              type: 'series',
-              voices: voices
-            });
+            if (fail) fail();
           }, fail);
         } catch (e) {
           if (fail) fail(e);
@@ -1383,6 +1463,7 @@
         return base + encodeURIComponent(url);
       }
       function shouldUseStreamProxy(url) {
+        if (isNativePlatform()) return false;
         // uaflix віддає стріми плеєра zetvideo — вони працюють напряму, обгортка не потрібна
         if (sourceKey === 'uaflix' && isZetvideoUrl(url)) return false;
         var player = Lampa.Storage.get('player');
