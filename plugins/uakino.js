@@ -339,23 +339,56 @@
     }).catch(function (e) { Lampa.Loading.stop(); if (Lampa.Noty) Lampa.Noty.show('UAKino: помилка ' + (e && e.message || '')); });
   }
 
-  function addButton(e) {
-    var render = e.object.activity.render();
-    if (!render || render.find('.view--uakino').length) return;
+  function updateController(render) {
+    setTimeout(function () {
+      try {
+        if (window.Lampa && Lampa.Controller) {
+          Lampa.Controller.collectionSet(render);
+          if (Lampa.Activity.active() && Lampa.Activity.active().activity && Lampa.Activity.active().activity.toggle) {
+            Lampa.Activity.active().activity.toggle();
+          } else {
+            Lampa.Controller.toggle('full_start');
+          }
+        }
+      } catch (e) {}
+    }, 100);
+  }
+
+  function findButtonsContainer(render) {
+    if (!render) return null;
+    var container = render.find('.full-start-new__buttons');
+    if (!container.length) container = render.find('.full-start__buttons');
+    if (!container.length) container = render.find('.full-start-new__right');
+    if (!container.length) container = render.find('.full-start');
+    return container.length ? container.first() : null;
+  }
+
+  function injectButton(render, movie) {
+    if (!render || !movie || render.find('.view--uakino').length) return;
+    var container = findButtonsContainer(render);
+    if (!container) return;
+
     var btn = $('<div class="full-start__button selector view--uakino" data-subtitle="uakino.ax">' + ICON + '<span>UAKino</span></div>');
-    btn.on('hover:enter', function () { open(e.data.movie); });
-    var targetTorrent = render.find('.view--torrent');
-    if (targetTorrent.length) {
-      targetTorrent.after(btn);
+    btn.on('hover:enter', function () { open(movie); });
+
+    var onlineBtn = container.find('.view--bandera-online');
+    var bookBtn = container.find('.button--book');
+    if (onlineBtn.length) {
+      onlineBtn.before(btn);
+    } else if (bookBtn.length) {
+      bookBtn.before(btn);
     } else {
-      var targetButtons = render.find('.full-start-new__buttons, .full-start__buttons');
-      if (targetButtons.length) {
-        targetButtons.first().prepend(btn);
-      } else {
-        render.find('.full-start-new, .full-start').first().prepend(btn);
-      }
+      container.prepend(btn);
     }
-    if (token()) addFavButton(render, e.data.movie);
+    container.find('.button--play').remove();
+    updateController(render);
+    if (token()) addFavButton(render, movie);
+  }
+
+  function addButton(e) {
+    if (e && e.object && e.object.activity && e.object.activity.render && e.data && e.data.movie) {
+      injectButton(e.object.activity.render(), e.data.movie);
+    }
   }
 
   function addFavButton(render, movie) {
@@ -372,13 +405,36 @@
           if (Lampa.Noty) Lampa.Noty.show(on ? 'Додано в обране UAKino' : 'Прибрано з обраного UAKino');
         }).catch(function () { if (Lampa.Noty) Lampa.Noty.show('UAKino: увійдіть в акаунт ще раз'); });
       });
-      render.find('.view--uakino').after(btn);
+      var uakinoBtn = render.find('.view--uakino');
+      var onlineBtn = render.find('.view--bandera-online');
+      if (onlineBtn.length) {
+        onlineBtn.after(btn);
+      } else if (uakinoBtn.length) {
+        uakinoBtn.after(btn);
+      } else {
+        render.find('.button--book').before(btn);
+      }
+      updateController(render);
     }).catch(function () {});
+  }
+
+  function checkActiveCard() {
+    try {
+      if (window.Lampa && Lampa.Activity && Lampa.Activity.active()) {
+        var act = Lampa.Activity.active();
+        if (act.component === 'full' && act.activity && act.activity.render && act.card) {
+          injectButton(act.activity.render(), act.card);
+        }
+      }
+    } catch (e) {}
   }
 
   Lampa.Listener.follow('full', function (e) {
     if (e.type === 'complite') { try { addButton(e); } catch (err) { console.log('uakino', err); } }
   });
+
+  checkActiveCard();
+  setTimeout(checkActiveCard, 400);
 
   // ── Каталог UAKino — розділ у меню Lampa ──
   var ROWS = [['new', 'Новинки'], ['films', 'Фільми'], ['series', 'Серіали'], ['cartoons', 'Мультфільми'], ['4k', 'У 4K'], ['top', 'Найкраще'], ['anime', 'Аніме']];

@@ -1783,13 +1783,15 @@
       function shouldUseStreamProxy(url) {
         if (isNativePlatform()) return false;
         if (isUakinoUrl(url)) return false;
-        // uaflix віддає стріми плеєра zetvideo — вони працюють напряму, обгортка не потрібна
-        if (sourceKey === 'uaflix' && isZetvideoUrl(url)) return false;
+        // uaflix та zetvideo віддають стріми плеєра з нативним CORS *, обгортка не потрібна
+        if (isZetvideoUrl(url)) return false;
+        // ashdi.vip віддає стріми напряму з CORS *, обгортка через проксі викликає Cloudflare 524 timeouts на ТБ
+        if (isAshdiUrl(url)) return false;
         // uaserials / tortuga cdn стріми віддають CORS header (access-control-allow-origin: *) напряму
         if (isTortugaUrl(url)) return false;
         var player = Lampa.Storage.get('player');
         if (player && player !== 'inner') return false;
-        return isAshdiUrl(url) || isZetvideoUrl(url) || isSniplyoUrl(url) || isCreavioUrl(url);
+        return isSniplyoUrl(url) || isCreavioUrl(url);
       }
       function isAshdiUrl(url) {
         return /(^|\/\/)([^\/]*\.)?ashdi\.vip(\/|$)/i.test(url || '');
@@ -4384,45 +4386,84 @@
     }
     var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"UAKino, Franko, Makhno\">\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5 4.5V19.5L18.5 12L5 4.5Z\" fill=\"#2563eb\" stroke=\"#fbbf24\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/></svg>\n        <span>Онлайн (UA)</span>\n    </div>";
     Lampa.Component.add('bandera_online', component);
-    resetTemplates();
-    Lampa.Listener.follow('full', function (e) {
-      if (e.type == 'complite') {
-        var render = e.object.activity.render();
-        if (!render || render.find('.view--bandera-online').length) return;
-        var btn = $(Lampa.Lang.translate(button));
-        btn.on('hover:enter', function () {
-          resetTemplates();
-          Lampa.Component.add('bandera_online', component);
-          Lampa.Activity.push({
-            url: '',
-            title: "Дивитись онлайн (UA)",
-            component: 'bandera_online',
-            search: e.data.movie.title,
-            search_one: e.data.movie.title,
-            search_two: e.data.movie.original_title,
-            movie: e.data.movie,
-            page: 1
-          });
-        });
-
-        var targetTorrent = render.find('.view--torrent');
-        if (targetTorrent.length) {
-          targetTorrent.after(btn);
-        } else {
-          var targetUakino = render.find('.view--uakino');
-          if (targetUakino.length) {
-            targetUakino.after(btn);
-          } else {
-            var targetButtons = render.find('.full-start-new__buttons, .full-start__buttons');
-            if (targetButtons.length) {
-              targetButtons.first().append(btn);
+    function updateController(render) {
+      setTimeout(function () {
+        try {
+          if (window.Lampa && Lampa.Controller) {
+            Lampa.Controller.collectionSet(render);
+            if (Lampa.Activity.active() && Lampa.Activity.active().activity && Lampa.Activity.active().activity.toggle) {
+              Lampa.Activity.active().activity.toggle();
             } else {
-              render.find('.full-start-new, .full-start').first().append(btn);
+              Lampa.Controller.toggle('full_start');
             }
           }
+        } catch (e) {}
+      }, 100);
+    }
+
+    function findButtonsContainer(render) {
+      if (!render) return null;
+      var container = render.find('.full-start-new__buttons');
+      if (!container.length) container = render.find('.full-start__buttons');
+      if (!container.length) container = render.find('.full-start-new__right');
+      if (!container.length) container = render.find('.full-start');
+      return container.length ? container.first() : null;
+    }
+
+    function injectButton(render, movie) {
+      if (!render || !movie || render.find('.view--bandera-online').length) return;
+      var container = findButtonsContainer(render);
+      if (!container) return;
+
+      var btn = $(Lampa.Lang.translate(button));
+      btn.on('hover:enter', function () {
+        resetTemplates();
+        Lampa.Component.add('bandera_online', component);
+        Lampa.Activity.push({
+          url: '',
+          title: "Дивитись онлайн (UA)",
+          component: 'bandera_online',
+          search: movie.title,
+          search_one: movie.title,
+          search_two: movie.original_title,
+          movie: movie,
+          page: 1
+        });
+      });
+
+      var uakinoBtn = container.find('.view--uakino');
+      var bookBtn = container.find('.button--book');
+      if (uakinoBtn.length) {
+        uakinoBtn.after(btn);
+      } else if (bookBtn.length) {
+        bookBtn.before(btn);
+      } else {
+        container.prepend(btn);
+      }
+      container.find('.button--play').remove();
+      updateController(render);
+    }
+
+    Lampa.Listener.follow('full', function (e) {
+      if (e.type == 'complite') {
+        if (e.object && e.object.activity && e.object.activity.render && e.data && e.data.movie) {
+          injectButton(e.object.activity.render(), e.data.movie);
         }
       }
     });
+
+    function checkActiveCard() {
+      try {
+        if (window.Lampa && Lampa.Activity && Lampa.Activity.active()) {
+          var act = Lampa.Activity.active();
+          if (act.component === 'full' && act.activity && act.activity.render && act.card) {
+            injectButton(act.activity.render(), act.card);
+          }
+        }
+      } catch (e) {}
+    }
+    checkActiveCard();
+    setTimeout(checkActiveCard, 400);
   }
   if (!window.bandera_online && Lampa.Manifest.app_digital >= 155) startPlugin();
 

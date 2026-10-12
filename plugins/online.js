@@ -1,10 +1,16 @@
 (function () {
     'use strict';
-    var script = document.currentScript || Array.from(document.scripts || []).pop();
-    var base = (script && script.src) ? script.src.replace(/\/[^/]+$/, '') : 'https://dmarceniuk.github.io/main';
-    if (base.endsWith('/plugins')) {
-        base = base.replace(/\/plugins$/, '');
-    }
+    var base = 'https://dmarceniuk.github.io/main';
+    try {
+        var scripts = document.getElementsByTagName('script');
+        for (var i = scripts.length - 1; i >= 0; i--) {
+            var s = scripts[i];
+            if (s && s.src && (s.src.indexOf('dmarceniuk') !== -1 || s.src.indexOf('online.js') !== -1)) {
+                base = s.src.split('?')[0].replace(/\/[^/]+$/, '').replace(/\/plugins$/, '');
+                break;
+            }
+        }
+    } catch (e) {}
 
     // 1. Strict torrent protection (user in Spain - absolutely 0% P2P allowed)
     try {
@@ -20,7 +26,7 @@
     } catch (e) {}
 
     // 2. Cache-busting version parameter based on release timestamp
-    var v = 'v=3.0.' + Math.floor(Date.now() / 60000);
+    var v = 'v=3.2.' + Math.floor(Date.now() / 60000);
 
     function putScript(src, cb) {
         var sep = src.indexOf('?') === -1 ? '?' : '&';
@@ -30,21 +36,22 @@
         } else {
             var s = document.createElement('script');
             s.src = finalSrc;
-            if (cb) s.onload = cb;
-            if (cb) s.onerror = cb;
+            if (cb) {
+                s.onload = cb;
+                s.onerror = cb;
+            }
             document.body.appendChild(s);
         }
     }
 
     function init() {
         // 1. Official UAKino integration (catalog in menu, QR account, 4K HEVC, instant player)
-        putScript(base + '/uakino.js', function () {
-            // 2. CryptoJS for decrypting streams
-            putScript(base + '/crypto-js.min.js', function () {
-                // 3. Multi-source Balancer Hub (UAKino, Franko CDN, Makhno Ashdi, UAFlix, UASerials, Filmix)
-                putScript(base + '/BanderaOnline/BanderaOnline.js', function () {
-                    console.log('[Online Suite] All Ukrainian Balancers & UAKino Loaded Successfully!');
-                });
+        putScript(base + '/uakino.js');
+
+        // 2. CryptoJS for decrypting streams + Multi-source Balancer Hub
+        putScript(base + '/crypto-js.min.js', function () {
+            putScript(base + '/BanderaOnline/BanderaOnline.js', function () {
+                console.log('[Online Suite] All Ukrainian Balancers & UAKino Loaded Successfully!');
             });
         });
     }
