@@ -1822,6 +1822,11 @@
       value: function search(params, sources, success, fail) {
         var url = this.apiBase() + '/search';
         var sourceKey = Array.isArray(sources) ? sources.join(',') : sources;
+        if (sourceKey === 'uaflix' || sourceKey === 'uatut') sourceKey = 'franko';
+        if (Array.isArray(sources)) {
+          sources = sources.map(function(s) { return (s === 'uaflix' || s === 'uatut') ? 'franko' : s; });
+          sourceKey = sources.join(',');
+        }
         url = this.addParam(url, 'sources', sourceKey);
         url = this.addParam(url, 'source', sourceKey);
         for (var key in params) {
@@ -1837,10 +1842,11 @@
     }, {
       key: "getContent",
       value: function getContent(sourceKey, ref, success, fail) {
+        var realKey = (sourceKey === 'uaflix' || sourceKey === 'uatut') ? 'franko' : sourceKey;
         var url = this.apiBase() + '/content';
         var data = {
-          source: sourceKey,
-          ref: this.extendRefWithAuth(sourceKey, ref),
+          source: realKey,
+          ref: this.extendRefWithAuth(realKey, ref),
           full: true
         };
         this.postJson(url, data, success, fail);
@@ -1848,10 +1854,11 @@
     }, {
       key: "getStream",
       value: function getStream(sourceKey, ref, success, fail) {
+        var realKey = (sourceKey === 'uaflix' || sourceKey === 'uatut') ? 'franko' : sourceKey;
         var url = this.apiBase() + '/stream';
         var data = {
-          source: sourceKey,
-          ref: this.extendRefWithAuth(sourceKey, ref)
+          source: realKey,
+          ref: this.extendRefWithAuth(realKey, ref)
         };
         this.postJson(url, data, success, fail);
       }
@@ -1990,7 +1997,9 @@
     }, {
       key: "getTitle",
       value: function getTitle(key) {
-        return this.titles[this.normalizeName(key)] || key;
+        var norm = this.normalizeName(key);
+        if (norm === 'franko' || norm === 'uaflix' || norm === 'uatut') return 'UAFlix';
+        return this.titles[norm] || key;
       }
     }]);
   }();
@@ -2024,10 +2033,16 @@
     var filter = new Lampa.Filter(object);
     var sources = {};
     function ensureSource(key) {
-      if (key && !sources[key]) {
-        sources[key] = createV2(key);
+      if (!key) return null;
+      var norm = (key + '').toLowerCase();
+      var realKey = (norm === 'uaflix' || norm === 'uatut') ? 'franko' : norm;
+      if (!sources[realKey]) {
+        sources[realKey] = createV2(realKey);
       }
-      return sources[key];
+      if (norm !== realKey) {
+        sources[norm] = sources[realKey];
+      }
+      return sources[realKey] || sources[norm];
     }
     var last;
     var extended;
@@ -2112,6 +2127,12 @@
         });
       }
       sources = filterEnabledSources(sources);
+      sources = sources.map(function (name) {
+        return (name === 'uaflix' || name === 'uatut') ? 'franko' : name;
+      });
+      sources = sources.filter(function (item, pos) {
+        return sources.indexOf(item) === pos;
+      });
       sources = sourcesStore.applyUserFilters(sources);
       if (sources.indexOf('uaserials') === -1) {
         sources.push('uaserials');
@@ -4062,7 +4083,7 @@
     if (!$('#bandera_online_style').length) {
       $('body').append(Lampa.Template.get('bandera_online_css', {}, true));
     }
-    var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"Franko, Makhno, UAFlix\">\n        <svg viewBox=\"0 -4 28 28\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g clip-path=\"url(#clip0_503_2809)\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> <mask id=\"mask0_503_2809\" style=\"mask-type:alpha\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"28\" height=\"20\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> </mask> <g mask=\"url(#mask0_503_2809)\"> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0 10.6667H28V0H0V10.6667Z\" fill=\"#156DD1\"></path> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0 20H28V10.6667H0V20Z\" fill=\"#FFD948\"></path> </g> </g> <defs> <clipPath id=\"clip0_503_2809\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> </clipPath> </defs> </svg>\n        <span>Дивитись онлайн</span>\n    </div>";
+    var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"UAFlix, Makhno, Filmix\">\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5 4.5V19.5L18.5 12L5 4.5Z\" fill=\"#2563eb\" stroke=\"#fbbf24\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/></svg>\n        <span>Дивитись онлайн</span>\n    </div>";
     Lampa.Component.add('bandera_online', component);
     resetTemplates();
     Lampa.Listener.follow('full', function (e) {

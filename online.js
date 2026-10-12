@@ -12,16 +12,24 @@
             Lampa.Storage.set('torrserver_preload', false);
             Lampa.Storage.set('torrserver_use_link', 'never');
             Lampa.Storage.set('parser_torrent_type', 'none');
+            var curBal = Lampa.Storage.get('bandera_online_balanser', '');
+            if (curBal === 'uaflix' || curBal === 'uatut' || !curBal) {
+                Lampa.Storage.set('bandera_online_balanser', 'franko');
+            }
         }
     } catch (e) {}
 
-    // 2. Load dependencies sequentially: crypto-js -> BanderaOnline -> uaserials button
+    // 2. Cache-busting version parameter based on release timestamp
+    var v = 'v=2.5.' + Math.floor(Date.now() / 60000);
+
     function putScript(src, cb) {
+        var sep = src.indexOf('?') === -1 ? '?' : '&';
+        var finalSrc = src + sep + v;
         if (window.Lampa && Lampa.Utils && Lampa.Utils.putScriptAsync) {
-            Lampa.Utils.putScriptAsync([src], cb || function () {}, cb || function () {});
+            Lampa.Utils.putScriptAsync([finalSrc], cb || function () {}, cb || function () {});
         } else {
             var s = document.createElement('script');
-            s.src = src;
+            s.src = finalSrc;
             if (cb) s.onload = cb;
             if (cb) s.onerror = cb;
             document.body.appendChild(s);
@@ -31,9 +39,7 @@
     function init() {
         putScript(base + '/crypto-js.min.js', function () {
             putScript(base + '/BanderaOnline/BanderaOnline.js', function () {
-                putScript(base + '/uaserials.js', function () {
-                    console.log('[Online Suite] Ukrainian Balancers Loaded Successfully!');
-                });
+                console.log('[Online Suite] Ukrainian Balancers Loaded Successfully!');
             });
         });
     }

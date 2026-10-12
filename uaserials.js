@@ -20,9 +20,9 @@
         Lampa.Listener.follow('full', function (e) {
             if (e.type === 'complite') {
                 var render = e.object.activity.render();
-                if (!render || render.find('.view--uaserials').length) return;
+                if (!render || render.find('.view--uaserials').length || render.find('.view--bandera-online').length) return;
 
-                var btn = $('<div class="full-start__button selector view--uaserials" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;" data-subtitle="UASerials.com"><span>UASerials</span></div>');
+                var btn = $('<div class="full-start__button selector view--uaserials" data-subtitle="UASerials.com"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 4.5V19.5L18.5 12L5 4.5Z" fill="#10b981" stroke="#059669" stroke-width="1.5" stroke-linejoin="round"/></svg><span>UASerials</span></div>');
 
                 btn.on('hover:enter', function () {
                     Lampa.Storage.set('bandera_online_balanser', 'uaserials');
