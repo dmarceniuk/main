@@ -870,7 +870,29 @@
         if (!params.mal_id) params.mal_id = movie.mal_id || '';
         component.loading(true);
 
-        function fallbackSearch() {
+        function ensureImdbId(cb) {
+          if (params.imdb_id) return cb();
+          if (movie && movie.imdb_id) {
+            params.imdb_id = movie.imdb_id;
+            return cb();
+          }
+          var tmdbId = params.tmdb_id || getTmdbId(movie);
+          if (tmdbId && window.Lampa && Lampa.TMDB && Lampa.TMDB.external_imdb_id) {
+            var type = (movie.name || movie.first_air_date) ? 'tv' : 'movie';
+            Lampa.TMDB.external_imdb_id({ id: tmdbId, type: type }, function (imdb) {
+              if (imdb) {
+                params.imdb_id = imdb;
+                if (movie) movie.imdb_id = imdb;
+              }
+              cb();
+            });
+          } else {
+            cb();
+          }
+        }
+
+        function executeSearch() {
+          function fallbackSearch() {
           if (isFallback) {
             component.empty();
             return;
@@ -991,6 +1013,9 @@
           fallbackSearch();
         });
       }
+
+      ensureImdbId(executeSearch);
+    }
       function loadContent(ref) {
         var request_ref = cloneRef(ref);
         content_ref = cloneRef(ref);
@@ -1941,6 +1966,16 @@
             if (ordered.indexOf(key) === -1) ordered.push(key);
           });
           result = ordered;
+        } else {
+          var preferred = ['franko', 'makhno', 'uaflix', 'bambooua', 'animeon', 'mikai', 'starlight', 'filmix', 'uaserials'];
+          var reordered = [];
+          preferred.forEach(function (p) {
+            if (result.indexOf(p) !== -1) reordered.push(p);
+          });
+          result.forEach(function (k) {
+            if (reordered.indexOf(k) === -1) reordered.push(k);
+          });
+          result = reordered;
         }
         if (hidden.length) {
           result = result.filter(function (name) {
@@ -2091,7 +2126,7 @@
       }
       var keys = Object.keys(sources);
       if (keys.indexOf('uaserials') === -1) keys.push('uaserials');
-      return keys.length ? keys : ['uaflix', 'uaserials'];
+      return keys.length ? keys : ['franko', 'makhno', 'uaflix', 'uaserials'];
     }
     function filterEnabledSources(list) {
       var enabled = getEnabledSources();
@@ -2101,7 +2136,7 @@
       });
     }
     function getEnabledSources() {
-      if (!available_sources || !available_sources.length) return ['uaflix', 'uaserials'];
+      if (!available_sources || !available_sources.length) return ['franko', 'makhno', 'uaflix', 'uaserials'];
       var enabled = available_sources.filter(function (item) {
         return item && item.enabled !== false;
       }).map(function (item) {
@@ -2113,7 +2148,7 @@
       enabled.forEach(function (name) {
         return ensureSource(name);
       });
-      return enabled.length ? enabled : ['uaflix', 'uaserials'];
+      return enabled.length ? enabled : ['franko', 'makhno', 'uaflix', 'uaserials'];
     }
     function loadAvailableSources(call) {
       var cached = Lampa.Storage.get(sourcesStore.sources_key, null);
@@ -2262,13 +2297,16 @@
         balanser = last_select_balanser[object.movie.id];
         Lampa.Storage.set('bandera_online_last_balanser', last_select_balanser);
       } else {
-        balanser = Lampa.Storage.get('bandera_online_balanser', 'uaflix');
+        balanser = Lampa.Storage.get('bandera_online_balanser', 'franko');
+      }
+      if (balanser === 'uaflix' || balanser === 'uatut') {
+        balanser = 'franko';
       }
       if (!isNativePlatform() && balanser === 'uaserials' && !Lampa.Storage.get('uaserials_proxy', '')) {
-        balanser = 'uaflix';
+        balanser = 'franko';
       }
-      if (!ensureSource(balanser) || filter_sources.indexOf(balanser) === -1 || balanser === 'uatut') {
-        balanser = (filter_sources.indexOf('uaflix') !== -1 ? 'uaflix' : filter_sources[0]) || '';
+      if (!ensureSource(balanser) || filter_sources.indexOf(balanser) === -1) {
+        balanser = (filter_sources.indexOf('franko') !== -1 ? 'franko' : (filter_sources.indexOf('makhno') !== -1 ? 'makhno' : (filter_sources.indexOf('uaflix') !== -1 ? 'uaflix' : filter_sources[0]))) || '';
       }
       if (!ensureSource(balanser)) {
         return null;
@@ -3003,26 +3041,43 @@
       var _this6 = this;
       this.reset();
       this.loading(true);
+      var movie = object && object.movie || object || {};
       var params = {
-        title: object.movie.title || object.movie.name,
-        original_title: object.movie.original_title || object.movie.original_name,
-        imdb_id: object.movie.imdb_id,
-        tmdb_id: getTmdbId(object.movie),
-        kinopoisk_id: object.movie.kinopoisk_id,
-        mal_id: object.movie.mal_id,
-        year: getYear(object.movie)
+        title: movie.title || movie.name,
+        original_title: movie.original_title || movie.original_name,
+        imdb_id: movie.imdb_id || '',
+        tmdb_id: getTmdbId(movie),
+        kinopoisk_id: movie.kinopoisk_id,
+        mal_id: movie.mal_id,
+        year: getYear(movie)
       };
-      api_client.search(params, filter_sources, function (json) {
-        _this6.loading(false);
-        if (json && json.ok && Array.isArray(json.items) && json.items.length) {
-          _this6.similars(json.items);
-        } else {
+
+      function executeSearch() {
+        api_client.search(params, filter_sources, function (json) {
+          _this6.loading(false);
+          if (json && json.ok && Array.isArray(json.items) && json.items.length) {
+            _this6.similars(json.items);
+          } else {
+            _this6.empty();
+          }
+        }, function () {
+          _this6.loading(false);
           _this6.empty();
-        }
-      }, function () {
-        _this6.loading(false);
-        _this6.empty();
-      });
+        });
+      }
+
+      if (!params.imdb_id && params.tmdb_id && window.Lampa && Lampa.TMDB && Lampa.TMDB.external_imdb_id) {
+        var type = (movie.name || movie.first_air_date) ? 'tv' : 'movie';
+        Lampa.TMDB.external_imdb_id({ id: params.tmdb_id, type: type }, function (imdb) {
+          if (imdb) {
+            params.imdb_id = imdb;
+            if (movie) movie.imdb_id = imdb;
+          }
+          executeSearch();
+        });
+      } else {
+        executeSearch();
+      }
     };
     this.getLastEpisode = function (items) {
       var last_episode = 0;
@@ -4007,7 +4062,7 @@
     if (!$('#bandera_online_style').length) {
       $('body').append(Lampa.Template.get('bandera_online_css', {}, true));
     }
-    var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"[Free] Bandera Online v".concat(manifest.version, "\">\n        <svg viewBox=\"0 -4 28 28\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <g clip-path=\"url(#clip0_503_2809)\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> <mask id=\"mask0_503_2809\" style=\"mask-type:alpha\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"28\" height=\"20\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> </mask> <g mask=\"url(#mask0_503_2809)\"> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0 10.6667H28V0H0V10.6667Z\" fill=\"#156DD1\"></path> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0 20H28V10.6667H0V20Z\" fill=\"#FFD948\"></path> </g> </g> <defs> <clipPath id=\"clip0_503_2809\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> </clipPath> </defs> </g></svg>\n        <span>\u0421\u043F\u0456\u043B\u044C\u043D\u043E\u0442\u0430 t.me/mmssixxx</span>\n    </div>");
+    var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"Franko, Makhno, UAFlix\">\n        <svg viewBox=\"0 -4 28 28\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g clip-path=\"url(#clip0_503_2809)\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> <mask id=\"mask0_503_2809\" style=\"mask-type:alpha\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"28\" height=\"20\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> </mask> <g mask=\"url(#mask0_503_2809)\"> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0 10.6667H28V0H0V10.6667Z\" fill=\"#156DD1\"></path> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0 20H28V10.6667H0V20Z\" fill=\"#FFD948\"></path> </g> </g> <defs> <clipPath id=\"clip0_503_2809\"> <rect width=\"28\" height=\"20\" rx=\"2\" fill=\"white\"></rect> </clipPath> </defs> </svg>\n        <span>Дивитись онлайн</span>\n    </div>";
     Lampa.Component.add('bandera_online', component);
     resetTemplates();
     Lampa.Listener.follow('full', function (e) {
@@ -4020,7 +4075,7 @@
           Lampa.Component.add('bandera_online', component);
           Lampa.Activity.push({
             url: '',
-            title: "Спільнота - t.me/mmssixxx",
+            title: "Дивитись онлайн (UA)",
             component: 'bandera_online',
             search: e.data.movie.title,
             search_one: e.data.movie.title,
@@ -4029,13 +4084,32 @@
             page: 1
           });
         });
-        var targetTorrent = render.find('.view--torrent');
-        if (targetTorrent.length) {
-          targetTorrent.after(btn);
+        var newButtons = render.find('.full-start-new__buttons');
+        if (newButtons.length) {
+          var playBtn = newButtons.find('.button--play');
+          if (playBtn.length) {
+            playBtn.after(btn);
+          } else {
+            newButtons.prepend(btn);
+          }
         } else {
-          var targetFallback = render.find('.view--trailer, .button--play');
-          if (targetFallback.length) targetFallback.first().after(btn);
-          else render.find('.full-start-new__buttons, .full-start__buttons').first().append(btn);
+          var classicButtons = render.find('.full-start__buttons');
+          if (classicButtons.length) {
+            classicButtons.prepend(btn);
+          } else {
+            var targetTorrent = render.find('.view--torrent');
+            if (targetTorrent.length) {
+              targetTorrent.after(btn);
+            } else {
+              render.find('.full-start-new, .full-start').first().append(btn);
+            }
+          }
+        }
+
+        var container = render.find('.buttons--container');
+        if (container.length && !container.find('.view--bandera-online').length) {
+          var cloneBtn = btn.clone(true);
+          container.append(cloneBtn);
         }
       }
     });

@@ -22,7 +22,7 @@
                 var render = e.object.activity.render();
                 if (!render || render.find('.view--uaserials').length) return;
 
-                var btn = $('<div class="full-start__button selector view--uaserials" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;"><span>UASerials</span></div>');
+                var btn = $('<div class="full-start__button selector view--uaserials" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;" data-subtitle="UASerials.com"><span>UASerials</span></div>');
 
                 btn.on('hover:enter', function () {
                     Lampa.Storage.set('bandera_online_balanser', 'uaserials');
@@ -32,9 +32,10 @@
                         Lampa.Storage.set('bandera_online_last_balanser', last_select_balanser);
                     }
 
+                    var movieTitle = (e.data && e.data.movie && (e.data.movie.title || e.data.movie.name)) || '';
                     Lampa.Activity.push({
                         url: '',
-                        title: "Спільнота - t.me/mmssixxx",
+                        title: "UASerials" + (movieTitle ? " - " + movieTitle : ""),
                         component: 'bandera_online',
                         search: e.data.movie.title,
                         search_one: e.data.movie.title,
@@ -44,11 +45,32 @@
                     });
                 });
 
-                var targetPos = render.find('.view--bandera-online');
-                if (!targetPos.length) targetPos = render.find('.view--torrent');
-                if (!targetPos.length) targetPos = render.find('.view--online');
-                if (targetPos.length) targetPos.after(btn);
-                else render.find('.full-start__buttons').append(btn);
+                var boBtn = render.find('.full-start-new__buttons .view--bandera-online');
+                if (boBtn.length) {
+                    boBtn.after(btn);
+                } else {
+                    var newButtons = render.find('.full-start-new__buttons');
+                    if (newButtons.length) {
+                        var playBtn = newButtons.find('.button--play');
+                        if (playBtn.length) playBtn.after(btn);
+                        else newButtons.prepend(btn);
+                    } else {
+                        var classicButtons = render.find('.full-start__buttons');
+                        if (classicButtons.length) {
+                            var classicBo = classicButtons.find('.view--bandera-online');
+                            if (classicBo.length) classicBo.after(btn);
+                            else classicButtons.prepend(btn);
+                        } else {
+                            render.find('.full-start-new, .full-start').first().append(btn);
+                        }
+                    }
+                }
+
+                var container = render.find('.buttons--container');
+                if (container.length && !container.find('.view--uaserials').length) {
+                    var cloneBtn = btn.clone(true);
+                    container.append(cloneBtn);
+                }
             }
         });
     }
