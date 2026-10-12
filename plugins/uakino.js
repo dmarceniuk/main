@@ -180,8 +180,8 @@
     return view.percent >= 90 ? ' ✓' : ' • ' + view.percent + '%';
   }
   function back() { Lampa.Controller.toggle('full_start'); }
-  function select(title, items, cb) {
-    Lampa.Select.show({ title: title, items: items, onSelect: cb, onBack: back });
+  function select(title, items, cb, onBackCb) {
+    Lampa.Select.show({ title: title, items: items, onSelect: cb, onBack: onBackCb || back });
   }
 
   function open(movie) {
@@ -197,16 +197,29 @@
         var memKey = 'uakino_voice_' + f.movie_id, mem = Lampa.Storage.get(memKey, '');
         if (h && h.voice && voices.indexOf(h.voice) >= 0) mem = h.voice;
         var has4k = !!p.alt4k && hevc() === 1;
-        var chooseVoice = function (cb) {
+
+        var chooseVoice = function (cb, forcePrompt) {
           if (voices.length < 2 && !has4k) return cb(voices[0]);
-          if (p.is_series && mem && voices.indexOf(mem) >= 0) return cb(mem);
-          var items = voices.map(function (v) { return { title: v || 'Українська', voice: v }; });
+          if (!forcePrompt && p.is_series && mem && voices.indexOf(mem) >= 0) return cb(mem);
+          var items = voices.map(function (v) {
+            return {
+              title: (v || 'Українська') + (mem === v ? ' • обрано' : ''),
+              voice: v,
+              selected: mem === v
+            };
+          });
           if (has4k) items.unshift({ title: '4K · найвища якість', voice: null, q: '2160' });
           select('Якість і озвучка', items, function (it) {
-            if (p.is_series && it.voice && !it.q) Lampa.Storage.set(memKey, it.voice);
+            if (p.is_series && it.voice && !it.q) {
+              mem = it.voice;
+              Lampa.Storage.set(memKey, it.voice);
+            }
             cb(it.voice, it.q);
+          }, function () {
+            Lampa.Controller.toggle('full_start');
           });
         };
+
         if (!p.is_series) {
           chooseVoice(function (v, qq) {
             var meta = { movie: f.movie_id, voice: v };
@@ -219,24 +232,70 @@
           });
           return;
         }
-        chooseVoice(function (v) {
+
+        var renderSeries = function (v) {
           var eps = p.episodes.filter(function (e) { return (e.voice || null) === (v || null) && e.episode != null; });
           var seasons = eps.map(function (e) { return e.season; }).filter(function (s, i, a) { return a.indexOf(s) === i; }).sort(function (a, b) { return a - b; });
           var hs = h && h.season != null && (!h.voice || h.voice === v) ? h.season : null;
+
           var chooseSeason = function (cb) {
             if (seasons.length < 2) return cb(seasons[0]);
-            select('Сезон', seasons.map(function (s) { return { title: 'Сезон ' + s + (s === hs ? ' • ви тут' : ''), season: s, selected: s === hs }; }), function (it) { cb(it.season); });
+            var seasonItems = seasons.map(function (s) {
+              return { title: 'Сезон ' + s + (s === hs ? ' • ви тут' : ''), season: s, selected: s === hs };
+            });
+            if (voices.length > 1 || has4k) {
+              seasonItems.unshift({ title: '🔄 Змінити озвучку' + (v ? ' (' + v + ')' : ''), action: 'change_voice' });
+            }
+            select('Сезон' + (v ? ' • ' + v : ''), seasonItems, function (it) {
+              if (it.action === 'change_voice') {
+                return chooseVoice(function (newV) {
+                  renderSeries(newV);
+                }, true);
+              }
+              cb(it.season);
+            }, function () {
+              if (voices.length > 1 || has4k) {
+                chooseVoice(function (newV) {
+                  renderSeries(newV);
+                }, true);
+              } else {
+                Lampa.Controller.toggle('full_start');
+              }
+            });
           };
+
           chooseSeason(function (s) {
             var list = eps.filter(function (e) { return e.season === s; }).sort(function (a, b) { return a.episode - b.episode; });
             var he = hs === s ? h.episode : null;
-            select('Сезон ' + s, list.map(function (e) {
+            var epItems = list.map(function (e) {
               var own = e.title && !/^\s*(серія|епізод|episode)\s*\d+\s*$/i.test(e.title);
               var view = timeline(movie, s, e.episode);
               if (e.episode === he) view = resume(view, h);
-              return { title: 'Серія ' + e.episode + (own ? ' — ' + e.title : '') + mark(view) + (e.episode === he ? ' • продовжити' : ''),
-                       ep: e, selected: e.episode === he };
-            }), function (it) {
+              return {
+                title: 'Серія ' + e.episode + (own ? ' — ' + e.title : '') + mark(view) + (e.episode === he ? ' • продовжити' : ''),
+                ep: e,
+                selected: e.episode === he
+              };
+            });
+            if (seasons.length > 1) {
+              epItems.unshift({ title: '📁 Інший сезон (зараз Сезон ' + s + ')', action: 'change_season' });
+            }
+            if (voices.length > 1 || has4k) {
+              epItems.unshift({ title: '🔄 Змінити озвучку' + (v ? ' (' + v + ')' : ''), action: 'change_voice' });
+            }
+
+            select('Сезон ' + s + (v ? ' • ' + v : ''), epItems, function (it) {
+              if (it.action === 'change_season') {
+                return chooseSeason(function () {
+                  renderSeries(v);
+                });
+              }
+              if (it.action === 'change_voice') {
+                return chooseVoice(function (newV) {
+                  renderSeries(newV);
+                }, true);
+              }
+
               Lampa.Loading.start(function () { Lampa.Loading.stop(); });
               var items = new Array(list.length), idx = list.indexOf(it.ep), k = 0;
               var next = function () {
@@ -257,8 +316,24 @@
                 Lampa.Player.play(items[idx]);
                 Lampa.Player.playlist(ok);
               });
+            }, function () {
+              if (seasons.length > 1) {
+                chooseSeason(function () {
+                  renderSeries(v);
+                });
+              } else if (voices.length > 1 || has4k) {
+                chooseVoice(function (newV) {
+                  renderSeries(newV);
+                }, true);
+              } else {
+                Lampa.Controller.toggle('full_start');
+              }
             });
           });
+        };
+
+        chooseVoice(function (v) {
+          renderSeries(v);
         });
       });
     }).catch(function (e) { Lampa.Loading.stop(); if (Lampa.Noty) Lampa.Noty.show('UAKino: помилка ' + (e && e.message || '')); });
