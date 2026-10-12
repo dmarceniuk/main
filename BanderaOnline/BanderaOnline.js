@@ -529,6 +529,197 @@
     }, fail);
   }
 
+  /* ============================================================
+     UAKINO NATIVE INTEGRATION (uakino.ax - Official Fast API)
+     ============================================================ */
+  function isUakinoUrl(url) {
+    return /(^|\/\/)([^\/]*\.)?uakino\.ax(\/|$)/i.test(url || '');
+  }
+
+  function uakino_search(params, object, call, fail) {
+    var movie = (object && object.movie) || {};
+    var tv = !!(movie.name || movie.number_of_seasons || movie.first_air_date || params.serial);
+    var date = movie.release_date || movie.first_air_date || params.year || '';
+    var qObj = {
+      tmdb: movie.id || params.tmdb_id,
+      imdb: movie.imdb_id || params.imdb_id,
+      type: tv ? 'tv' : 'movie',
+      year: (date + '').slice(0, 4),
+      title: params.title || movie.title || movie.name,
+      orig: params.original_title || movie.original_title || movie.original_name
+    };
+    var qs = Object.keys(qObj).filter(function(k) { return qObj[k] !== undefined && qObj[k] !== null && qObj[k] !== ''; })
+      .map(function(k) { return k + '=' + encodeURIComponent(qObj[k]); }).join('&');
+    var url = 'https://uakino.ax/hls/api/lampa/find?' + qs;
+
+    var req = new Lampa.Reguest();
+    req.timeout(10000);
+    req.silent(url, function(data) {
+      var j = typeof data === 'string' ? JSON.parse(data) : data;
+      if (j && j.found && j.movie_id) {
+        call([{
+          id: j.movie_id,
+          title: j.title || (movie.title || movie.name),
+          orig_title: j.origin_name || (movie.original_title || movie.original_name),
+          year: j.year || (date + '').slice(0, 4),
+          serial: j.is_series ? 1 : 0,
+          source: 'uakino',
+          ref: {
+            movie_id: j.movie_id,
+            is_series: !!j.is_series,
+            title: j.title || (movie.title || movie.name)
+          }
+        }]);
+      } else {
+        call([]);
+      }
+    }, function(e) {
+      if (fail) fail(e); else call([]);
+    }, false, { dataType: 'json' });
+  }
+
+  function uakino_getContent(ref, call, fail) {
+    if (!ref || !ref.movie_id) {
+      if (fail) fail('No ref');
+      return;
+    }
+    var sid = (window.Lampa && Lampa.Storage.get('uakino_sid', '')) || 'lp_stream';
+    var url = 'https://uakino.ax/hls/api/play?movie=' + encodeURIComponent(ref.movie_id) + '&s=' + encodeURIComponent(sid) + '&hevc=1';
+
+    var req = new Lampa.Reguest();
+    req.timeout(12000);
+    req.silent(url, function(data) {
+      var j = typeof data === 'string' ? JSON.parse(data) : data;
+      if (!j) {
+        if (fail) fail('Empty response');
+        return;
+      }
+      if (j.is_series) {
+        var voicesMap = {};
+        (j.episodes || []).forEach(function(ep) {
+          var v = ep.voice || 'Українська';
+          if (!voicesMap[v]) {
+            voicesMap[v] = {
+              id: v,
+              name: v,
+              display_name: v,
+              seasons: {}
+            };
+          }
+          var s = ep.season != null ? ep.season : 1;
+          if (!voicesMap[v].seasons[s]) {
+            voicesMap[v].seasons[s] = {
+              season: s,
+              title: 'Сезон ' + s,
+              episodes: []
+            };
+          }
+          voicesMap[v].seasons[s].episodes.push({
+            episode: ep.episode,
+            title: ep.title || ('Серія ' + ep.episode),
+            ref: {
+              movie_id: ref.movie_id,
+              voice: ep.voice,
+              season: s,
+              episode: ep.episode
+            }
+          });
+        });
+
+        var voicesList = Object.keys(voicesMap).map(function(vKey) {
+          var vObj = voicesMap[vKey];
+          var seasonsList = Object.keys(vObj.seasons).map(function(sKey) {
+            return vObj.seasons[sKey];
+          }).sort(function(a, b) { return a.season - b.season; });
+          return {
+            id: vObj.id,
+            name: vObj.name,
+            display_name: vObj.display_name,
+            seasons: seasonsList
+          };
+        });
+
+        call({
+          ok: true,
+          type: 'series',
+          title: j.title || ref.title,
+          voices: voicesList
+        });
+      } else {
+        var voices = (j.voices && j.voices.length) ? j.voices : ['Українська'];
+        var voiceItems = voices.map(function(v) {
+          return {
+            id: v,
+            name: v,
+            display_name: v,
+            streams: [{
+              title: v,
+              quality: j.alt4k ? '4K / 1080p' : '1080p',
+              url: '',
+              ref: {
+                movie_id: ref.movie_id,
+                voice: v
+              }
+            }]
+          };
+        });
+
+        call({
+          ok: true,
+          type: 'movie',
+          title: j.title || ref.title,
+          voices: voiceItems,
+          streams: voiceItems[0].streams
+        });
+      }
+    }, function(e) {
+      if (fail) fail(e);
+    }, false, { dataType: 'json' });
+  }
+
+  function uakino_getStream(ref, call, fail) {
+    if (!ref || !ref.movie_id) {
+      if (fail) fail('No stream ref');
+      return;
+    }
+    var sid = (window.Lampa && Lampa.Storage.get('uakino_sid', '')) || 'lp_stream';
+    var qObj = {
+      movie: ref.movie_id,
+      s: sid,
+      hevc: 1,
+      voice: ref.voice,
+      season: ref.season,
+      episode: ref.episode,
+      q: ref.q
+    };
+    var qs = Object.keys(qObj).filter(function(k) { return qObj[k] !== undefined && qObj[k] !== null && qObj[k] !== ''; })
+      .map(function(k) { return k + '=' + encodeURIComponent(qObj[k]); }).join('&');
+    var url = 'https://uakino.ax/hls/api/play?' + qs;
+
+    var req = new Lampa.Reguest();
+    req.timeout(12000);
+    req.silent(url, function(data) {
+      var j = typeof data === 'string' ? JSON.parse(data) : data;
+      if (j && (j.manifest_abs || j.manifest)) {
+        var mUrl = j.manifest_abs || ('https://uakino.ax' + j.manifest);
+        if (!/\.m3u8($|\?)/.test(mUrl)) mUrl += '.m3u8';
+        var subs = (j.subs || []).map(function(s) {
+          return { label: s.label, url: 'https://uakino.ax' + s.url };
+        });
+        call([{
+          url: mUrl,
+          quality: j.alt4k ? '4K / 1080p' : '1080p',
+          title: ref.voice || 'Українська',
+          subtitles: subs
+        }]);
+      } else {
+        if (fail) fail('UAKino: не вдалося завантажити потік');
+      }
+    }, function(e) {
+      if (fail) fail('UAKino: мережева помилка');
+    }, false, { dataType: 'json' });
+  }
+
   function createV2(sourceKey) {
     return function v2(component, _object) {
       var api_client = component.api_client;
@@ -936,6 +1127,36 @@
           });
         }
 
+        if (sourceKey === 'uakino') {
+          uakino_search(params, object, function (items) {
+            if (!items || !items.length) {
+              fallbackSearch();
+              return;
+            }
+            if (items.length > 1 && !object.clarification) {
+              component.similars(items.map(function (item) {
+                return {
+                  id: item.ref && item.ref.movie_id || item.title,
+                  title: item.title,
+                  orig_title: item.orig_title,
+                  year: item.year,
+                  serial: item.serial ? 1 : 0,
+                  source: 'uakino',
+                  poster: item.poster || '',
+                  ref: item.ref
+                };
+              }));
+              component.loading(false);
+              return;
+            }
+            selected = items[0];
+            loadContent(selected.ref);
+          }, function () {
+            fallbackSearch();
+          });
+          return;
+        }
+
         if (sourceKey === 'uaserials') {
           uaserials_search(params, object, function (items) {
             if (!items || !items.length) {
@@ -1036,6 +1257,26 @@
           }
           request_ref = cloneRef(content_ref);
           request_ref.season = season_number;
+        }
+        if (sourceKey === 'uakino') {
+          uakino_getContent(request_ref, function (json) {
+            if (!json || !json.ok) {
+              handleSourceError(json);
+              return;
+            }
+            if (json.type == 'series') {
+              series = normalizeSeries(json);
+              initializeLazyState(ref);
+              filter();
+              buildEpisodes();
+            } else {
+              lazy_state = createLazyState();
+              drawMovie(json);
+            }
+          }, function () {
+            component.doesNotAnswer();
+          });
+          return;
         }
         if (sourceKey === 'uaserials') {
           uaserials_getContent(request_ref, function (json) {
@@ -1541,6 +1782,7 @@
       }
       function shouldUseStreamProxy(url) {
         if (isNativePlatform()) return false;
+        if (isUakinoUrl(url)) return false;
         // uaflix віддає стріми плеєра zetvideo — вони працюють напряму, обгортка не потрібна
         if (sourceKey === 'uaflix' && isZetvideoUrl(url)) return false;
         // uaserials / tortuga cdn стріми віддають CORS header (access-control-allow-origin: *) напряму
@@ -1570,6 +1812,13 @@
         return base + encodeURIComponent(url);
       }
       function getStream(ref, success, fail) {
+        if (sourceKey === 'uakino' && ref) {
+          uakino_getStream(ref, function (streams) {
+            stream_cache[cache_key] = streams;
+            success(streams);
+          }, fail);
+          return;
+        }
         if (sourceKey === 'uaserials' && ref && ref.url) {
           return success([{
             url: ref.url,
@@ -1822,9 +2071,9 @@
       value: function search(params, sources, success, fail) {
         var url = this.apiBase() + '/search';
         var sourceKey = Array.isArray(sources) ? sources.join(',') : sources;
-        if (sourceKey === 'uaflix' || sourceKey === 'uatut') sourceKey = 'franko';
+        if (sourceKey === 'uatut') sourceKey = 'franko';
         if (Array.isArray(sources)) {
-          sources = sources.map(function(s) { return (s === 'uaflix' || s === 'uatut') ? 'franko' : s; });
+          sources = sources.map(function(s) { return s === 'uatut' ? 'franko' : s; });
           sourceKey = sources.join(',');
         }
         url = this.addParam(url, 'sources', sourceKey);
@@ -1842,7 +2091,7 @@
     }, {
       key: "getContent",
       value: function getContent(sourceKey, ref, success, fail) {
-        var realKey = (sourceKey === 'uaflix' || sourceKey === 'uatut') ? 'franko' : sourceKey;
+        var realKey = (sourceKey === 'uatut') ? 'franko' : sourceKey;
         var url = this.apiBase() + '/content';
         var data = {
           source: realKey,
@@ -1854,7 +2103,7 @@
     }, {
       key: "getStream",
       value: function getStream(sourceKey, ref, success, fail) {
-        var realKey = (sourceKey === 'uaflix' || sourceKey === 'uatut') ? 'franko' : sourceKey;
+        var realKey = (sourceKey === 'uatut') ? 'franko' : sourceKey;
         var url = this.apiBase() + '/stream';
         var data = {
           source: realKey,
@@ -1886,6 +2135,15 @@
       this.sources_hide_key = 'BO_SOURCES_HIDE';
       this.available_sources = Lampa.Storage.get(this.sources_key, []);
       if (!Array.isArray(this.available_sources)) this.available_sources = [];
+      if (!this.available_sources.some(function(s) { return (s.key || s.name) === 'uakino'; })) {
+        this.available_sources.unshift({
+          name: 'UAKino',
+          key: 'uakino',
+          enabled: true,
+          capabilities: { search: true, content: true, stream: true },
+          inputs: { search: ['title', 'original_title', 'year', 'tmdb_id', 'imdb_id'] }
+        });
+      }
       if (!this.available_sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
         this.available_sources.push({
           name: 'UASerials',
@@ -1897,7 +2155,12 @@
       }
       this.titles = {};
       this.applyTitles(this.available_sources);
+      this.titles['uakino'] = 'UAKino (uakino.ax)';
+      this.titles['franko'] = 'Franko (CDN)';
+      this.titles['uaflix'] = 'UAFlix';
+      this.titles['makhno'] = 'Makhno (Ashdi)';
       this.titles['uaserials'] = 'UASerials';
+      this.titles['filmix'] = 'Filmix';
     }
     return _createClass(SourcesStore, [{
       key: "normalizeName",
@@ -1961,6 +2224,9 @@
         var hidden = this.getHidden();
         var sorted = this.getSorted();
         var result = list.slice(0);
+        if (result.indexOf('uakino') === -1 && hidden.indexOf('uakino') === -1) {
+          result.unshift('uakino');
+        }
         if (result.indexOf('uaserials') === -1) {
           result.push('uaserials');
         }
@@ -1974,7 +2240,7 @@
           });
           result = ordered;
         } else {
-          var preferred = ['franko', 'makhno', 'uaflix', 'bambooua', 'animeon', 'mikai', 'starlight', 'filmix', 'uaserials'];
+          var preferred = ['uakino', 'franko', 'makhno', 'uaflix', 'uaserials', 'filmix', 'bambooua', 'animeon', 'mikai', 'starlight'];
           var reordered = [];
           preferred.forEach(function (p) {
             if (result.indexOf(p) !== -1) reordered.push(p);
@@ -1989,6 +2255,9 @@
             return hidden.indexOf(name) === -1;
           });
         }
+        if (result.indexOf('uakino') === -1 && hidden.indexOf('uakino') === -1) {
+          result.unshift('uakino');
+        }
         if (result.indexOf('uaserials') === -1 && hidden.indexOf('uaserials') === -1) {
           result.push('uaserials');
         }
@@ -1998,7 +2267,12 @@
       key: "getTitle",
       value: function getTitle(key) {
         var norm = this.normalizeName(key);
-        if (norm === 'franko' || norm === 'uaflix' || norm === 'uatut') return 'UAFlix';
+        if (norm === 'uakino') return 'UAKino (uakino.ax)';
+        if (norm === 'franko') return 'Franko (CDN)';
+        if (norm === 'uaflix') return 'UAFlix';
+        if (norm === 'makhno') return 'Makhno (Ashdi)';
+        if (norm === 'uaserials') return 'UASerials';
+        if (norm === 'filmix') return 'Filmix';
         return this.titles[norm] || key;
       }
     }]);
@@ -2035,7 +2309,7 @@
     function ensureSource(key) {
       if (!key) return null;
       var norm = (key + '').toLowerCase();
-      var realKey = (norm === 'uaflix' || norm === 'uatut') ? 'franko' : norm;
+      var realKey = (norm === 'uatut') ? 'franko' : norm;
       if (!sources[realKey]) {
         sources[realKey] = createV2(realKey);
       }
@@ -2128,12 +2402,15 @@
       }
       sources = filterEnabledSources(sources);
       sources = sources.map(function (name) {
-        return (name === 'uaflix' || name === 'uatut') ? 'franko' : name;
+        return name === 'uatut' ? 'franko' : name;
       });
       sources = sources.filter(function (item, pos) {
         return sources.indexOf(item) === pos;
       });
       sources = sourcesStore.applyUserFilters(sources);
+      if (sources.indexOf('uakino') === -1) {
+        sources.unshift('uakino');
+      }
       if (sources.indexOf('uaserials') === -1) {
         sources.push('uaserials');
       }
@@ -2142,48 +2419,73 @@
     function getBaseSources() {
       var from_api = getEnabledSources();
       if (from_api) {
+        if (from_api.indexOf('uakino') === -1) from_api.unshift('uakino');
         if (from_api.indexOf('uaserials') === -1) from_api.push('uaserials');
         return from_api;
       }
       var keys = Object.keys(sources);
+      if (keys.indexOf('uakino') === -1) keys.unshift('uakino');
       if (keys.indexOf('uaserials') === -1) keys.push('uaserials');
-      return keys.length ? keys : ['franko', 'makhno', 'uaflix', 'uaserials'];
+      return keys.length ? keys : ['uakino', 'franko', 'makhno', 'uaflix', 'uaserials'];
     }
     function filterEnabledSources(list) {
       var enabled = getEnabledSources();
       if (!enabled) return list;
       return list.filter(function (name) {
-        return name === 'uaserials' || enabled.indexOf(name) !== -1;
+        return name === 'uakino' || name === 'uaserials' || enabled.indexOf(name) !== -1;
       });
     }
     function getEnabledSources() {
-      if (!available_sources || !available_sources.length) return ['franko', 'makhno', 'uaflix', 'uaserials'];
+      if (!available_sources || !available_sources.length) return ['uakino', 'franko', 'makhno', 'uaflix', 'uaserials'];
       var enabled = available_sources.filter(function (item) {
         return item && item.enabled !== false;
       }).map(function (item) {
         return sourcesStore.normalizeName(item.key || item.name);
       }).filter(Boolean);
+      if (enabled.indexOf('uakino') === -1) {
+        enabled.unshift('uakino');
+      }
       if (enabled.indexOf('uaserials') === -1) {
         enabled.push('uaserials');
       }
       enabled.forEach(function (name) {
         return ensureSource(name);
       });
-      return enabled.length ? enabled : ['franko', 'makhno', 'uaflix', 'uaserials'];
+      return enabled.length ? enabled : ['uakino', 'franko', 'makhno', 'uaflix', 'uaserials'];
     }
     function loadAvailableSources(call) {
       var cached = Lampa.Storage.get(sourcesStore.sources_key, null);
-      if (cached && Array.isArray(cached) && !cached.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
-        cached.push({
-          name: 'UASerials',
-          key: 'uaserials',
-          enabled: true,
-          capabilities: { search: true, content: true, stream: true },
-          inputs: { search: ['title', 'original_title', 'year'] }
-        });
+      if (cached && Array.isArray(cached)) {
+        if (!cached.some(function(s) { return (s.key || s.name) === 'uakino'; })) {
+          cached.unshift({
+            name: 'UAKino',
+            key: 'uakino',
+            enabled: true,
+            capabilities: { search: true, content: true, stream: true },
+            inputs: { search: ['title', 'original_title', 'year', 'tmdb_id', 'imdb_id'] }
+          });
+        }
+        if (!cached.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
+          cached.push({
+            name: 'UASerials',
+            key: 'uaserials',
+            enabled: true,
+            capabilities: { search: true, content: true, stream: true },
+            inputs: { search: ['title', 'original_title', 'year'] }
+          });
+        }
       }
       api_client.getSources(function (json) {
         if (json && json.ok && Array.isArray(json.sources)) {
+          if (!json.sources.some(function(s) { return (s.key || s.name) === 'uakino'; })) {
+            json.sources.unshift({
+              name: 'UAKino',
+              key: 'uakino',
+              enabled: true,
+              capabilities: { search: true, content: true, stream: true },
+              inputs: { search: ['title', 'original_title', 'year', 'tmdb_id', 'imdb_id'] }
+            });
+          }
           if (!json.sources.some(function(s) { return (s.key || s.name) === 'uaserials'; })) {
             json.sources.push({
               name: 'UASerials',
@@ -2318,16 +2620,13 @@
         balanser = last_select_balanser[object.movie.id];
         Lampa.Storage.set('bandera_online_last_balanser', last_select_balanser);
       } else {
-        balanser = Lampa.Storage.get('bandera_online_balanser', 'franko');
+        balanser = Lampa.Storage.get('bandera_online_balanser', 'uakino');
       }
-      if (balanser === 'uaflix' || balanser === 'uatut') {
-        balanser = 'franko';
-      }
-      if (!isNativePlatform() && balanser === 'uaserials' && !Lampa.Storage.get('uaserials_proxy', '')) {
+      if (balanser === 'uatut') {
         balanser = 'franko';
       }
       if (!ensureSource(balanser) || filter_sources.indexOf(balanser) === -1) {
-        balanser = (filter_sources.indexOf('franko') !== -1 ? 'franko' : (filter_sources.indexOf('makhno') !== -1 ? 'makhno' : (filter_sources.indexOf('uaflix') !== -1 ? 'uaflix' : filter_sources[0]))) || '';
+        balanser = (filter_sources.indexOf('uakino') !== -1 ? 'uakino' : (filter_sources.indexOf('franko') !== -1 ? 'franko' : (filter_sources.indexOf('makhno') !== -1 ? 'makhno' : (filter_sources.indexOf('uaflix') !== -1 ? 'uaflix' : filter_sources[0])))) || '';
       }
       if (!ensureSource(balanser)) {
         return null;
@@ -3705,7 +4004,7 @@
     if (state.duplicates > 0) {
       Lampa.Storage.set('plugins', state.plugins);
     }
-    if (!state.hasCommunityWatches) {
+    if (!state.hasCommunityWatches && Lampa.Plugins && Lampa.Plugins.add) {
       Lampa.Plugins.add({
         url: communityWatchesPlugin.url,
         name: communityWatchesPlugin.name,
@@ -4083,7 +4382,7 @@
     if (!$('#bandera_online_style').length) {
       $('body').append(Lampa.Template.get('bandera_online_css', {}, true));
     }
-    var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"UAFlix, Makhno, Filmix\">\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5 4.5V19.5L18.5 12L5 4.5Z\" fill=\"#2563eb\" stroke=\"#fbbf24\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/></svg>\n        <span>Дивитись онлайн</span>\n    </div>";
+    var button = "<div class=\"full-start__button selector view--online view--bandera-online\" data-subtitle=\"UAKino, Franko, Makhno\">\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5 4.5V19.5L18.5 12L5 4.5Z\" fill=\"#2563eb\" stroke=\"#fbbf24\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/></svg>\n        <span>Онлайн (UA)</span>\n    </div>";
     Lampa.Component.add('bandera_online', component);
     resetTemplates();
     Lampa.Listener.follow('full', function (e) {
@@ -4105,32 +4404,22 @@
             page: 1
           });
         });
-        var newButtons = render.find('.full-start-new__buttons');
-        if (newButtons.length) {
-          var playBtn = newButtons.find('.button--play');
-          if (playBtn.length) {
-            playBtn.after(btn);
-          } else {
-            newButtons.prepend(btn);
-          }
+
+        var targetTorrent = render.find('.view--torrent');
+        if (targetTorrent.length) {
+          targetTorrent.after(btn);
         } else {
-          var classicButtons = render.find('.full-start__buttons');
-          if (classicButtons.length) {
-            classicButtons.prepend(btn);
+          var targetUakino = render.find('.view--uakino');
+          if (targetUakino.length) {
+            targetUakino.after(btn);
           } else {
-            var targetTorrent = render.find('.view--torrent');
-            if (targetTorrent.length) {
-              targetTorrent.after(btn);
+            var targetButtons = render.find('.full-start-new__buttons, .full-start__buttons');
+            if (targetButtons.length) {
+              targetButtons.first().append(btn);
             } else {
               render.find('.full-start-new, .full-start').first().append(btn);
             }
           }
-        }
-
-        var container = render.find('.buttons--container');
-        if (container.length && !container.find('.view--bandera-online').length) {
-          var cloneBtn = btn.clone(true);
-          container.append(cloneBtn);
         }
       }
     });

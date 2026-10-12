@@ -13,14 +13,14 @@
             Lampa.Storage.set('torrserver_use_link', 'never');
             Lampa.Storage.set('parser_torrent_type', 'none');
             var curBal = Lampa.Storage.get('bandera_online_balanser', '');
-            if (curBal === 'uaflix' || curBal === 'uatut' || !curBal) {
-                Lampa.Storage.set('bandera_online_balanser', 'franko');
+            if (!curBal || curBal === 'uatut') {
+                Lampa.Storage.set('bandera_online_balanser', 'uakino');
             }
         }
     } catch (e) {}
 
     // 2. Cache-busting version parameter based on release timestamp
-    var v = 'v=2.5.' + Math.floor(Date.now() / 60000);
+    var v = 'v=3.0.' + Math.floor(Date.now() / 60000);
 
     function putScript(src, cb) {
         var sep = src.indexOf('?') === -1 ? '?' : '&';
@@ -37,9 +37,14 @@
     }
 
     function init() {
-        putScript(base + '/crypto-js.min.js', function () {
-            putScript(base + '/BanderaOnline/BanderaOnline.js', function () {
-                console.log('[Online Suite] Ukrainian Balancers Loaded Successfully!');
+        // 1. Official UAKino integration (catalog in menu, QR account, 4K HEVC, instant player)
+        putScript(base + '/uakino.js', function () {
+            // 2. CryptoJS for decrypting streams
+            putScript(base + '/crypto-js.min.js', function () {
+                // 3. Multi-source Balancer Hub (UAKino, Franko CDN, Makhno Ashdi, UAFlix, UASerials, Filmix)
+                putScript(base + '/BanderaOnline/BanderaOnline.js', function () {
+                    console.log('[Online Suite] All Ukrainian Balancers & UAKino Loaded Successfully!');
+                });
             });
         });
     }
